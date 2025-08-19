@@ -33,3 +33,7 @@
 ## 🔌 My Home Assistant Custom HACS Lovelaces
 
 [![Star History Chart](https://api.star-history.com/svg?repos=timmaurice/lovelace-blitzortung-lightning-card,timmaurice/lovelace-background-graph-entities,timmaurice/lovelace-rss-accordion&type=Date)](https://www.star-history.com/#timmaurice/lovelace-blitzortung-lightning-card&timmaurice/lovelace-background-graph-entities&timmaurice/lovelace-rss-accordion&Date)
+
+|Blitzortung Lightning Card|Background Graph Card|RSS Accordion|
+|---|---|---|
+|[![GH-downloads](https://img.shields.io/github/downloads/timmaurice/lovelace-blitzortung-lightning-card/total?style=flat-square)](https://github.com/timmaurice/lovelace-blitzortung-lightning-card/releases)|[![GH-downloads](https://img.shields.io/github/downloads/timmaurice/lovelace-background-graph-entities/total?style=flat-square)](https://github.com/timmaurice/lovelace-background-graph-entities/releases)|[![GH-downloads](https://img.shields.io/github/downloads/timmaurice/lovelace-rss-accordion/total?style=flat-square)](https://github.com/timmaurice/lovelace-rss-accordion/releases)|
