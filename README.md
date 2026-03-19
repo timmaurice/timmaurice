@@ -30,7 +30,7 @@
 ## 🚀 Featured Projects
 
 | Repository | Description | Stars | Last Commit |
-|---|---|---|---|---|---|
+|---|---|---|---|
 | [**Stylus-Salesforce-Fixes**](https://github.com/timmaurice/Stylus-Salesforce-Fixes) | A stylus css salesforce overwrite that fix things | [![GH-stars](https://img.shields.io/github/stars/timmaurice/Stylus-Salesforce-Fixes?style=flat-square&label=%20)](https://github.com/timmaurice/Stylus-Salesforce-Fixes/stargazers) | [![GH-last-commit](https://img.shields.io/github/last-commit/timmaurice/Stylus-Salesforce-Fixes?style=flat-square&label=%20)](https://github.com/timmaurice/Stylus-Salesforce-Fixes/commits) |
 
 ---
