@@ -2,7 +2,7 @@
 
 ### A passionate frontend and Salesforce developer from Germany
 
-![Profile views](https://komarev.com/ghpvc/?username=timmaurice&label=Profile%20views&color=0e75b6&style=flat-square)  
+![Profile views](https://komarev.com/ghpvc/?username=timmaurice&label=Profile%20views&color=0e75b6&style=flat-square)
 
 <!---
 
@@ -14,13 +14,24 @@
 ---
 
 ## ☕ Support My Work
+
 [<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="30" />](https://www.buymeacoffee.com/timmaurice)
 
 ---
 
 ## 📊 GitHub Stats
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs?username=timmaurice&show_icons=true&locale=en&layout=compact)  
+
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs?username=timmaurice&show_icons=true&locale=en&layout=compact)
+
 <!--![Tim's GitHub stats](https://github-readme-stats.vercel.app/api?username=timmaurice&show_icons=true&locale=en)-->
+
+---
+
+## 🚀 Featured Projects
+
+| Repository | Description | Stars | Last Commit |
+|---|---|---|---|---|---|
+| [**Stylus-Salesforce-Fixes**](https://github.com/timmaurice/Stylus-Salesforce-Fixes) | A stylus css salesforce overwrite that fix things | [![GH-stars](https://img.shields.io/github/stars/timmaurice/Stylus-Salesforce-Fixes?style=flat-square&label=%20)](https://github.com/timmaurice/Stylus-Salesforce-Fixes/stargazers) | [![GH-last-commit](https://img.shields.io/github/last-commit/timmaurice/Stylus-Salesforce-Fixes?style=flat-square&label=%20)](https://github.com/timmaurice/Stylus-Salesforce-Fixes/commits) |
 
 ---
 
@@ -41,6 +52,9 @@
 | [**Windy Card**](https://github.com/timmaurice/lovelace-windy-card) | [![GH-downloads](https://img.shields.io/github/downloads/timmaurice/lovelace-windy-card/total?style=flat-square&label=%20)](https://github.com/timmaurice/lovelace-windy-card/releases) | [![GH-code-size](https://img.shields.io/github/languages/code-size/timmaurice/lovelace-windy-card?style=flat-square&label=%20)](https://github.com/timmaurice/lovelace-windy-card) | [![GH-issues](https://img.shields.io/github/issues/timmaurice/lovelace-windy-card?style=flat-square&label=%20)](https://github.com/timmaurice/lovelace-windy-card/issues) | [![GH-stars](https://img.shields.io/github/stars/timmaurice/lovelace-windy-card?style=flat-square&label=%20)](https://github.com/timmaurice/lovelace-windy-card/stargazers) | [![GH-last-commit](https://img.shields.io/github/last-commit/timmaurice/lovelace-windy-card?style=flat-square&label=%20)](https://github.com/timmaurice/lovelace-windy-card/commits) |
 
 ## 🔌 My Home Assistant HACS Integrations
+
+[![Star History Chart](https://api.star-history.com/svg?repos=timmaurice/bergfex,timmaurice/feedparser,timmaurice/sea-temperatures,timmaurice/skyline-webcams&type=date&legend=top-left)](https://www.star-history.com/#timmaurice/bergfex&timmaurice/feedparser&timmaurice/sea-temperatures&timmaurice/skyline-webcams&type=date&legend=top-left)
+
 | Repository | Downloads | Code Size | Issues | Stars | Last Commit |
 |---|---|---|---|---|---|
 | [**Bergfex Scraper**](https://github.com/timmaurice/bergfex) | [![GH-downloads](https://img.shields.io/github/downloads/timmaurice/bergfex/total?style=flat-square&label=%20)](https://github.com/timmaurice/bergfex/releases) | [![GH-code-size](https://img.shields.io/github/languages/code-size/timmaurice/bergfex?style=flat-square&label=%20)](https://github.com/timmaurice/bergfex) | [![GH-issues](https://img.shields.io/github/issues/timmaurice/bergfex?style=flat-square&label=%20)](https://github.com/timmaurice/bergfex/issues) | [![GH-stars](https://img.shields.io/github/stars/timmaurice/bergfex?style=flat-square&label=%20)](https://github.com/timmaurice/bergfex/stargazers) | [![GH-last-commit](https://img.shields.io/github/last-commit/timmaurice/bergfex?style=flat-square&label=%20)](https://github.com/timmaurice/bergfex/commits) |
