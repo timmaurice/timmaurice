@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Discover and install custom Home Assistant cards and integrations exclusively by timmaurice." />
+    <meta name="theme-color" content="#0f1115" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://timmaurice.github.io/timmaurice/" />
+    <meta property="og:title" content="Home Assistant App Store by @timmaurice" />
+    <meta property="og:description" content="A curated collection of custom Lovelace cards and integrations for Home Assistant." />
+    <meta property="og:image" content="https://raw.githubusercontent.com/timmaurice/lovelace-nina-dwd-card/main/image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://timmaurice.github.io/timmaurice/" />
+    <meta property="twitter:title" content="Home Assistant App Store by @timmaurice" />
+    <meta property="twitter:description" content="A curated collection of custom Lovelace cards and integrations for Home Assistant." />
+    <meta property="twitter:image" content="https://raw.githubusercontent.com/timmaurice/lovelace-nina-dwd-card/main/image.png" />
+
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://raw.githubusercontent.com https://images.weserv.nl https://img.shields.io; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://images.weserv.nl;" />
+
+    <title>Home Assistant App Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+    <style>
+      :root {
+        --bg-color: #0f1115;
+        --card-border: rgba(255, 255, 255, 0.05);
+        --accent-color: #3b82f6;
+      }
+      body {
+        background: var(--bg-color);
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+      }
+      .loader-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        width: 100%;
+        gap: 1.5rem;
+        grid-column: 1 / -1;
+      }
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--card-border);
+        border-top-color: var(--accent-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .progress-container {
+        width: 100%;
+        max-width: 300px;
+        text-align: center;
+      }
+      .progress-bar-wrapper {
+        height: 4px;
+        background: var(--card-border);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+      }
+      .progress-bar {
+        height: 100%;
+        background: var(--accent-color);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      .progress-text {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

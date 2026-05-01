@@ -27,6 +27,14 @@
 
 ---
 
+## 🌟 Discover My Home Assistant Projects
+
+I've created a central hub to easily explore, search, and install all of my custom Lovelace cards and integrations.
+
+[![Home Assistant App Store](https://img.shields.io/badge/Visit-Home_Assistant_App_Store-2563eb?style=for-the-badge&logo=home-assistant)](https://timmaurice.github.io/timmaurice/)
+
+---
+
 ## 🚀 Featured Projects
 
 | Repository | Description | Stars | Last Commit |
