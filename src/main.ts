@@ -4,7 +4,13 @@ import { createRepoCard, updateVisibility, updateSort, renderError } from './ui'
 import { debounce } from './utils';
 
 async function init() {
+  console.log('[App] Initializing App Store...');
   const app = document.querySelector<HTMLDivElement>('#app')!;
+
+  if (!app) {
+    console.error('[App] Critical error: Root element #app not found in the document.');
+    return;
+  }
 
   app.innerHTML = `
     <header>
@@ -48,6 +54,7 @@ async function init() {
   const progressBar = document.getElementById('progressBar')!;
   const progressText = document.getElementById('progressText')!;
 
+  console.log('[App] Starting repository fetch...');
   try {
     const repositories = await fetchRepositories((current, total, name) => {
       progressContainer.classList.remove('hidden');
@@ -56,8 +63,21 @@ async function init() {
       progressText.innerText = `Fetching ${name} (${current}/${total})...`;
     });
 
+    console.log(`[App] Data fetch complete. Found ${repositories.length} repositories.`);
+
+    if (repositories.length === 0) {
+      console.warn('[App] No repositories found matching the filter criteria.');
+      repoGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: rgba(255,255,255,0.03); border-radius: 1.25rem;">
+          <p style="color: var(--text-secondary);">No Home Assistant repositories found.</p>
+        </div>
+      `;
+      return;
+    }
+
     // Pre-sort repositories based on initial sort value (default: popular)
     const initialSort = sortSelect.value;
+    console.log(`[App] Pre-sorting by: ${initialSort}`);
     repositories.sort((a, b) => {
       if (initialSort === 'popular') return b.stargazers_count - a.stargazers_count;
       if (initialSort === 'downloads') return (b.download_count || 0) - (a.download_count || 0);
@@ -67,28 +87,35 @@ async function init() {
     });
 
     // Dynamic preload for the top 2 screenshots (LCP candidates)
+    console.log('[App] Injecting preloads for LCP images...');
     repositories.slice(0, 2).forEach((repo) => {
-      if (repo.screenshot_url) {
-        const link = document.createElement('link');
-        link.rel = 'preload';
-        link.as = 'image';
-        // Need to import optimizeImageUrl or use the full path
-        const optimizedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(repo.screenshot_url)}&w=600&fit=cover&output=webp&q=75&il`;
-        link.href = optimizedUrl;
-        link.fetchPriority = 'high';
-        document.head.appendChild(link);
+      try {
+        if (repo.screenshot_url) {
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.as = 'image';
+          const optimizedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(repo.screenshot_url)}&w=600&fit=cover&output=webp&q=75&il`;
+          link.href = optimizedUrl;
+          link.fetchPriority = 'high';
+          document.head.appendChild(link);
+        }
+      } catch (e) {
+        console.error('[App] Failed to inject preload:', e);
       }
     });
 
+    console.log('[App] Rendering repository cards...');
     // Initial render of all cards with correct priority
     repoGrid.innerHTML = repositories.map((repo, index) => createRepoCard(repo, index)).join('');
 
+    console.log('[App] Applying layout sort...');
     // Initial sort (to apply visual order if DOM order differs, though they match now)
     updateSort(repoGrid, sortSelect.value);
 
     // Optimized search with debounce and visibility toggling
     const handleSearch = debounce(() => {
       const searchTerm = searchInput.value.toLowerCase();
+      console.log(`[App] Searching for: "${searchTerm}"`);
       updateVisibility(repoGrid, searchTerm);
     }, 300);
 
@@ -96,10 +123,13 @@ async function init() {
 
     // Optimized sort using CSS order
     sortSelect.addEventListener('change', () => {
+      console.log(`[App] Changing sort to: ${sortSelect.value}`);
       updateSort(repoGrid, sortSelect.value);
     });
+    
+    console.log('[App] Initialization complete.');
   } catch (error) {
-    console.error('Error initializing app:', error);
+    console.error('[App] Critical initialization error:', error);
     renderError(
       error instanceof Error
         ? error.message
