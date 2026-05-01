@@ -3,7 +3,7 @@ import { compression } from 'vite-plugin-compression2';
 import { ViteMinifyPlugin } from 'vite-plugin-minify';
 
 export default defineConfig({
-  base: './',
+  base: '/timmaurice/',
   plugins: [
     ViteMinifyPlugin({}),
     compression(), // Gzip
