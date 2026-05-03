@@ -16,7 +16,11 @@ import {
  */
 async function checkFileExists(url: string): Promise<boolean> {
   try {
-    const response = await fetch(url, { method: 'HEAD' });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+    const response = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    clearTimeout(timeoutId);
     return response.ok;
   } catch {
     return false;
@@ -128,42 +132,74 @@ function logRateLimit(response: Response) {
 export async function fetchRepositories(
   onProgress?: (current: number, total: number, name: string) => void,
 ): Promise<Repository[]> {
+  // Check cache first
   const cached = localStorage.getItem(CACHE_KEY);
   if (cached) {
-    const { timestamp, repos }: CacheData = JSON.parse(cached);
-    if (Date.now() - timestamp < CACHE_DURATION) {
-      console.log('Serving from cache...');
-      return repos;
+    try {
+      const { timestamp, repos }: CacheData = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        console.log('[API] Serving from valid cache. Repos:', repos.length);
+        return repos;
+      }
+      console.log('[API] Cache expired.');
+    } catch (e) {
+      console.warn('[API] Cache corruption detected. Clearing...', e);
+      localStorage.removeItem(CACHE_KEY);
     }
   }
 
+  console.log('[API] Fetching repositories for user:', GITHUB_USERNAME);
   const response = await fetch(
     `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100`,
   );
 
   const currentRateLimit = logRateLimit(response);
+  console.log('[API] Rate Limit:', currentRateLimit?.remaining, '/', currentRateLimit?.limit);
 
   if (!response.ok) {
     if (cached) {
-      const { repos }: CacheData = JSON.parse(cached);
-      return repos;
+      try {
+        const { repos }: CacheData = JSON.parse(cached);
+        console.warn('[API] Fetch failed, serving stale cache.');
+        return repos;
+      } catch {
+        // Fall through
+      }
     }
-    throw new Error('Failed to fetch repositories (Rate limit likely exceeded)');
+    throw new Error(
+      `GitHub API Error: ${response.status} ${response.statusText}. Rate Limit Remaining: ${currentRateLimit?.remaining}`,
+    );
   }
-  const data: Repository[] = await response.json();
 
-  const filteredData = data.filter(
-    (repo) => !EXCLUDED_REPOS.includes(repo.name) && repo.topics.includes('home-assistant'),
-  );
+  const data = await response.json();
+  if (!Array.isArray(data)) {
+    console.error('[API] Unexpected API response format:', data);
+    throw new Error('Unexpected GitHub API response format.');
+  }
+
+  console.log(`[API] Total repositories found: ${data.length}`);
+
+  // Flexible filtering: include common variations of the topic
+  const haTopics = ['home-assistant', 'homeassistant', 'hacs'];
+  const filteredData = data.filter((repo: any) => {
+    const isExcluded = EXCLUDED_REPOS.includes(repo.name);
+    const topics = repo.topics || [];
+    const hasHATopic = topics.some((t: string) => haTopics.includes(t.toLowerCase()));
+
+    return !isExcluded && hasHATopic;
+  });
+
+  console.log(`[API] Repositories after HA topic filter: ${filteredData.length}`);
 
   let processedCount = 0;
   const totalCount = filteredData.length;
 
-  const reposWithHacs = await pMap(
+  const reposWithEnrichment = await pMap(
     filteredData,
     async (repo) => {
       const baseUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${repo.name}/${repo.default_branch}`;
 
+      // 1. Fetch HACS metadata
       try {
         const hacsResponse = await fetch(`${baseUrl}/hacs.json`);
         if (hacsResponse.ok) {
@@ -176,9 +212,11 @@ export async function fetchRepositories(
         // Ignore
       }
 
+      // Fallbacks
       if (repo.name === 'bergfex') repo.hacs_name = repo.hacs_name || 'Bergfex Scraper';
       if (repo.name === 'feedparser') repo.hacs_name = repo.hacs_name || 'Feedparser';
 
+      // 2. Fetch Icon (Brands then Local)
       const domain = repo.name.replace('lovelace-', '').replace('-card', '');
       const brandsUrl = `${HA_BRANDS_URL}/${domain}/icon.png`;
 
@@ -190,8 +228,10 @@ export async function fetchRepositories(
         repo.icon_url = await findImage(baseUrl, repo.name, 'icon');
       }
 
+      // 3. Fetch Screenshot
       repo.screenshot_url = await findImage(baseUrl, repo.name, 'screenshot');
 
+      // 4. Fetch Release Downloads
       try {
         const releasesResponse = await fetch(
           `https://api.github.com/repos/${GITHUB_USERNAME}/${repo.name}/releases`,
@@ -227,16 +267,21 @@ export async function fetchRepositories(
     CONCURRENCY_LIMIT,
   );
 
-  const result = reposWithHacs.filter((repo): repo is Repository => repo !== null);
+  const result = reposWithEnrichment.filter((repo): repo is Repository => repo !== null);
 
-  localStorage.setItem(
-    CACHE_KEY,
-    JSON.stringify({
-      timestamp: Date.now(),
-      repos: result,
-      rateLimit: sessionRateLimit || currentRateLimit,
-    }),
-  );
+  // Save to cache
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        timestamp: Date.now(),
+        repos: result,
+        rateLimit: sessionRateLimit || currentRateLimit,
+      }),
+    );
+  } catch (e) {
+    console.warn('[API] Failed to save to local storage:', e);
+  }
 
   return result;
 }

@@ -1,4 +1,4 @@
-import { html, svg } from 'lit-html';
+import { html, svg, render } from 'lit-html';
 import type { Repository } from '@/types';
 import { formatDate, getRepoCategory, optimizeImageUrl, highlightText } from '@/utils';
 import { generateDynamicIcon, generateDynamicHero, getIconPath } from '@/graphics';
@@ -25,10 +25,15 @@ export const iconTemplate = (
  *
  * @param {string} url The URL to copy.
  * @param {MouseEvent} e The click event.
+ * @param {string} repoName Name of the repository being copied.
  */
-async function handleCopy(url: string, e: MouseEvent) {
+async function handleCopy(url: string, e: MouseEvent, repoName: string) {
   const btn = (e.target as HTMLElement).closest('.copy-btn');
   if (!btn) return;
+
+  if (window.umami) {
+    window.umami.track('copy-url', { repository: repoName });
+  }
 
   try {
     await navigator.clipboard.writeText(url);
@@ -46,9 +51,6 @@ async function handleCopy(url: string, e: MouseEvent) {
     console.error('Failed to copy!', err);
   }
 }
-
-// Note: Using a helper for the internal render to avoid circular dependency with main
-import { render } from 'lit-html';
 
 /**
  * Returns the HTML template for an individual repository card.
@@ -168,6 +170,8 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
                   rel="noopener noreferrer"
                   class="install-btn"
                   aria-label="Install ${repo.hacs_name || repo.name} via HACS"
+                  data-umami-event="install-click"
+                  data-umami-event-repository="${repo.name}"
                 >
                   GET
                 </a>
@@ -179,6 +183,8 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
                   rel="noopener noreferrer"
                   class="install-btn view-btn"
                   aria-label="View ${repo.hacs_name || repo.name} on GitHub"
+                  data-umami-event="view-click"
+                  data-umami-event-repository="${repo.name}"
                 >
                   VIEW
                 </a>
@@ -186,7 +192,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
           <button
             class="copy-btn"
             title="Copy HACS Repository URL"
-            @click=${(e: MouseEvent) => handleCopy(repo.html_url, e)}
+            @click=${(e: MouseEvent) => handleCopy(repo.html_url, e, repo.name)}
           >
             ${iconTemplate('copy')}
           </button>

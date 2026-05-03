@@ -35,8 +35,6 @@ const state: AppState = {
 /**
  * Returns the HTML template for the application header, including title
  * and aggregate project statistics.
- *
- * @returns {TemplateResult} The lit-html template result.
  */
 const headerTemplate = () => html`
   <header class="app-header">
@@ -60,7 +58,6 @@ const headerTemplate = () => html`
  * Returns the HTML template for the category filter tabs.
  *
  * @param {(category: 'all' | 'plugin' | 'integration') => void} onFilter Category change handler.
- * @returns {TemplateResult} The lit-html template result.
  */
 const filterTabsTemplate = (onFilter: (category: 'all' | 'plugin' | 'integration') => void) => html`
   <div class="filter-tabs">
@@ -90,7 +87,6 @@ const filterTabsTemplate = (onFilter: (category: 'all' | 'plugin' | 'integration
  *
  * @param {(e: Event) => void} onSearch Callback for input events on the search field.
  * @param {(e: Event) => void} onSort Callback for change events on the sort dropdown.
- * @returns {TemplateResult} The lit-html template result.
  */
 const controlsTemplate = (onSearch: (e: Event) => void, onSort: (e: Event) => void) => html`
   <div class="controls-container">
@@ -126,7 +122,6 @@ const controlsTemplate = (onSearch: (e: Event) => void, onSort: (e: Event) => vo
  * @param {(e: Event) => void} onSearch Search input event handler.
  * @param {(e: Event) => void} onSort Sort selection event handler.
  * @param {(cat: 'all' | 'plugin' | 'integration') => void} onFilter Category change handler.
- * @returns {TemplateResult} The lit-html template result.
  */
 const appTemplate = (
   onSearch: (e: Event) => void,
@@ -157,8 +152,6 @@ const appTemplate = (
 /**
  * Returns the loading state template, featuring a progress bar and
  * animated skeleton cards to prevent layout shift.
- *
- * @returns {TemplateResult} The lit-html template result.
  */
 const loaderTemplate = () => html`
   ${headerTemplate()}
@@ -183,6 +176,7 @@ function updateUI() {
   const app = document.querySelector<HTMLDivElement>('#app')!;
   if (!app) return;
 
+  // Capture current positions for FLIP animation
   const grid = document.getElementById('repoGrid');
   const firstRects = new Map<string, DOMRect>();
 
@@ -193,12 +187,14 @@ function updateUI() {
     });
   }
 
+  // Render the template
   if (state.loading) {
     render(loaderTemplate(), app);
   } else {
     render(appTemplate(handleSearch, handleSort, handleFilter), app);
   }
 
+  // Execute FLIP animation to slide cards to new positions
   if (grid && !state.loading) {
     requestAnimationFrame(() => {
       const newGrid = document.getElementById('repoGrid');
@@ -236,6 +232,11 @@ function updateUI() {
  */
 const handleSearch = debounce((e: Event) => {
   state.searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+
+  if (window.umami && state.searchTerm.length > 2) {
+    window.umami.track('search', { query: state.searchTerm });
+  }
+
   applyFiltersAndSort();
   updateUI();
 }, 300);
@@ -245,6 +246,11 @@ const handleSearch = debounce((e: Event) => {
  */
 const handleSort = (e: Event) => {
   state.sortBy = (e.target as HTMLSelectElement).value;
+
+  if (window.umami) {
+    window.umami.track('sort', { type: state.sortBy });
+  }
+
   applyFiltersAndSort();
   updateUI();
 };
@@ -256,6 +262,11 @@ const handleSort = (e: Event) => {
  */
 const handleFilter = (category: 'all' | 'plugin' | 'integration') => {
   state.categoryFilter = category;
+
+  if (window.umami) {
+    window.umami.track('filter-category', { category });
+  }
+
   applyFiltersAndSort();
   updateUI();
 };
@@ -265,11 +276,18 @@ const handleFilter = (category: 'all' | 'plugin' | 'integration') => {
  * search term and sort criteria stored in state.
  */
 function applyFiltersAndSort() {
-  state.filteredRepositories = state.repositories.filter((repo) => {
-    const matchesSearch =
-      (repo.hacs_name || repo.name).toLowerCase().includes(state.searchTerm) ||
-      (repo.description || '').toLowerCase().includes(state.searchTerm);
+  console.log(
+    '[App] Applying filters. Search:',
+    state.searchTerm,
+    'Category:',
+    state.categoryFilter,
+  );
 
+  state.filteredRepositories = state.repositories.filter((repo) => {
+    const name = (repo.hacs_name || repo.name).toLowerCase();
+    const desc = (repo.description || '').toLowerCase();
+
+    const matchesSearch = name.includes(state.searchTerm) || desc.includes(state.searchTerm);
     const matchesCategory =
       state.categoryFilter === 'all' || getRepoCategory(repo.name) === state.categoryFilter;
 
@@ -292,6 +310,10 @@ function applyFiltersAndSort() {
         return 0;
     }
   });
+
+  console.log(
+    `[App] Filtering complete. Showing ${state.filteredRepositories.length} of ${state.repositories.length} repos.`,
+  );
 }
 
 /**
@@ -299,14 +321,18 @@ function applyFiltersAndSort() {
  * initial stats, and triggers the first render.
  */
 async function init() {
+  console.log('[App] App starting...');
   updateUI();
 
   try {
+    console.log('[App] Triggering repository fetch...');
     state.repositories = await fetchRepositories((current, total, name) => {
       state.progressWidth = `${(current / total) * 100}%`;
       state.progressText = `Fetching ${name} (${current}/${total})...`;
       updateUI();
     });
+
+    console.log(`[App] Fetch success. Found ${state.repositories.length} repositories.`);
 
     state.totalStars = state.repositories.reduce((sum, repo) => sum + repo.stargazers_count, 0);
     state.totalDownloads = state.repositories.reduce(
@@ -318,13 +344,13 @@ async function init() {
     applyFiltersAndSort();
     updateUI();
 
+    // Preload priority images to improve LCP
     state.filteredRepositories.slice(0, 2).forEach((repo) => {
       if (repo.screenshot_url) {
         const link = document.createElement('link');
         link.rel = 'preload';
         link.as = 'image';
         link.href = `https://images.weserv.nl/?url=${encodeURIComponent(repo.screenshot_url)}&w=600&fit=cover&output=webp&q=75&il`;
-        link.fetchPriority = 'high';
         document.head.appendChild(link);
       }
     });

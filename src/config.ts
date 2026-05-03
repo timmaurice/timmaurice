@@ -22,3 +22,5 @@ export const HA_BRANDS_URL =
 export const IMAGE_WESERV_URL = 'https://images.weserv.nl/';
 
 export const RECENTLY_UPDATED_THRESHOLD_DAYS = 7;
+
+export const ANALYTICS_WEBSITE_ID = '19375596-a853-42c5-9914-d5e6dcece04b';

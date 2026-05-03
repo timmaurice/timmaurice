@@ -22,3 +22,13 @@ export interface CacheData {
     reset: string;
   };
 }
+
+export interface Umami {
+  track: (eventName: string, data?: Record<string, string | number | boolean>) => void;
+}
+
+declare global {
+  interface Window {
+    umami?: Umami;
+  }
+}
