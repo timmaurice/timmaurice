@@ -1,30 +1,64 @@
 import { html, svg } from 'lit-html';
 import type { Repository } from '@/types';
-import { formatDate, getRepoCategory, optimizeImageUrl } from '@/utils';
+import { formatDate, getRepoCategory, optimizeImageUrl, highlightText } from '@/utils';
 import { generateDynamicIcon, generateDynamicHero, getIconPath } from '@/graphics';
 import { GITHUB_USERNAME, RECENTLY_UPDATED_THRESHOLD_DAYS, MS_PER_DAY } from '@/config';
 
 /**
  * Returns a Lit-html SVG template for a specific UI icon.
  *
- * @param {'star' | 'download'} name The icon name.
+ * @param {'star' | 'download' | 'copy' | 'check'} name The icon name.
  * @param {string} className Optional CSS class to apply to the SVG element.
  * @returns {TemplateResult} The lit-html template result.
  */
-export const iconTemplate = (name: 'star' | 'download', className: string) => svg`
+export const iconTemplate = (
+  name: 'star' | 'download' | 'copy' | 'check',
+  className: string = '',
+) => svg`
   <svg viewBox="0 0 16 16" class="${className}" aria-hidden="true">
     <path d="${getIconPath(name)}"></path>
   </svg>
 `;
 
 /**
+ * Handles copying the repository URL to the clipboard.
+ *
+ * @param {string} url The URL to copy.
+ * @param {MouseEvent} e The click event.
+ */
+async function handleCopy(url: string, e: MouseEvent) {
+  const btn = (e.target as HTMLElement).closest('.copy-btn');
+  if (!btn) return;
+
+  try {
+    await navigator.clipboard.writeText(url);
+
+    // Visual feedback
+    const originalIcon = btn.innerHTML;
+    render(iconTemplate('check', 'check'), btn as HTMLElement);
+    btn.classList.add('success');
+
+    setTimeout(() => {
+      btn.innerHTML = originalIcon;
+      btn.classList.remove('success');
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy!', err);
+  }
+}
+
+// Note: Using a helper for the internal render to avoid circular dependency with main
+import { render } from 'lit-html';
+
+/**
  * Returns the HTML template for an individual repository card.
  *
  * @param {Repository} repo The repository data object.
  * @param {number} index The index of the card in the list (used for priority loading).
+ * @param {string} searchTerm Current search query for highlighting.
  * @returns {TemplateResult} The lit-html template result.
  */
-export const repoCardTemplate = (repo: Repository, index: number) => {
+export const repoCardTemplate = (repo: Repository, index: number, searchTerm: string = '') => {
   const category = getRepoCategory(repo.name);
   let badgeClass = 'badge other';
   let badgeText = 'Other';
@@ -54,6 +88,8 @@ export const repoCardTemplate = (repo: Repository, index: number) => {
   const now = new Date().getTime();
   const diffDays = (now - updatedAt) / MS_PER_DAY;
   const isRecentlyUpdated = diffDays <= RECENTLY_UPDATED_THRESHOLD_DAYS;
+
+  const displayName = repo.hacs_name || repo.name.replace('lovelace-', '').replace(/-/g, ' ');
 
   return html`
     <article
@@ -94,9 +130,7 @@ export const repoCardTemplate = (repo: Repository, index: number) => {
               rel="noopener noreferrer"
               class="card-title-link"
             >
-              <h2 class="card-title">
-                ${repo.hacs_name || repo.name.replace('lovelace-', '').replace(/-/g, ' ')}
-              </h2>
+              <h2 class="card-title">${highlightText(displayName, searchTerm)}</h2>
             </a>
             <a
               href="https://github.com/${GITHUB_USERNAME}"
@@ -112,7 +146,9 @@ export const repoCardTemplate = (repo: Repository, index: number) => {
             </div>
           </div>
         </header>
-        <div class="card-description">${repo.description || 'No description available.'}</div>
+        <div class="card-description">
+          ${highlightText(repo.description || 'No description available.', searchTerm)}
+        </div>
         <div class="card-tags">
           ${repo.topics.map((topic) => html`<span class="tag">${topic}</span>`)}
         </div>
@@ -147,6 +183,13 @@ export const repoCardTemplate = (repo: Repository, index: number) => {
                   VIEW
                 </a>
               `}
+          <button
+            class="copy-btn"
+            title="Copy HACS Repository URL"
+            @click=${(e: MouseEvent) => handleCopy(repo.html_url, e)}
+          >
+            ${iconTemplate('copy')}
+          </button>
         </div>
       </div>
     </article>

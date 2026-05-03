@@ -5,6 +5,9 @@
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
   animation: fadeInUp 0.8s ease-out;
+  margin: -1rem;
+  /* Prevent clipping of large shadows */
+  padding: 1rem;
 
   @include respond-to('sm') {
     grid-template-columns: 1fr;
@@ -16,12 +19,20 @@
   display: flex;
   position: relative;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
   @include glass-effect;
+  transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
-  /* Stabilize rendering to prevent artifacts on siblings */
-  will-change: transform;
+  will-change: transform, box-shadow;
+  contain: layout paint;
   border-radius: 1.25rem;
+
+  /* Strict Isolation & Performance */
+  isolation: isolate;
   padding: 0;
   height: 100%;
   overflow: hidden;
@@ -33,12 +44,12 @@
     transform: translate3d(0, -8px, 0);
     z-index: 10;
     outline: none;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    border-color: rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
 
     .card-screenshot {
-      transform: scale(1.1);
+      transform: scale(1.05) translate3d(0, 0, 0);
     }
 
     .tag {
@@ -54,6 +65,8 @@
 
 .card-image-wrapper {
   position: relative;
+  /* Fix for filter overflow in Safari/Chrome */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
   background: #1a1e26;
   width: 100%;
   height: 160px;
@@ -61,6 +74,7 @@
 }
 
 .card-screenshot {
+  transform: translate3d(0, 0, 0);
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
   height: 100%;
@@ -175,6 +189,13 @@
   font-weight: 700;
   font-size: 1.15rem;
   line-height: 1.2;
+
+  mark.highlight {
+    border-radius: 2px;
+    background: rgba(59, 130, 246, 0.3);
+    padding: 0 2px;
+    color: inherit;
+  }
 }
 
 .card-developer {
@@ -206,6 +227,12 @@
   color: var(--text-secondary);
   font-size: 0.875rem;
   -webkit-box-orient: vertical;
+
+  mark.highlight {
+    border-radius: 2px;
+    background: rgba(59, 130, 246, 0.3);
+    color: var(--text-primary);
+  }
 }
 
 .card-tags {
@@ -268,11 +295,13 @@
 .card-actions {
   display: flex;
   justify-content: stretch;
+  gap: 0.5rem;
   margin-top: 1.25rem;
 }
 
 .install-btn {
   display: flex;
+  flex: 1;
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
@@ -282,7 +311,6 @@
   border-radius: 9999px;
   background: var(--accent-color);
   padding: 0.75rem 1rem;
-  width: 100%;
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
@@ -298,5 +326,36 @@
 
   &:active {
     transform: scale(0.98);
+  }
+}
+
+.copy-btn {
+  @include flex-center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+  border-radius: 9999px;
+  background: var(--card-bg);
+  width: 48px;
+  height: 48px;
+  color: var(--text-secondary);
+
+  svg {
+    fill: currentColor;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+  }
+
+  &.success {
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+    border-color: var(--success-color);
+    background: var(--success-color);
+    color: #fff;
   }
 }

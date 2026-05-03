@@ -4,7 +4,7 @@ import { repeat } from 'lit-html/directives/repeat.js';
 import { fetchRepositories } from '@/api';
 import type { Repository } from '@/types';
 import { repoCardTemplate, errorTemplate, iconTemplate, skeletonCardTemplate } from '@/ui';
-import { debounce } from '@/utils';
+import { debounce, getRepoCategory } from '@/utils';
 
 interface AppState {
   repositories: Repository[];
@@ -13,6 +13,7 @@ interface AppState {
   totalDownloads: number;
   searchTerm: string;
   sortBy: string;
+  categoryFilter: 'all' | 'plugin' | 'integration';
   loading: boolean;
   progressText: string;
   progressWidth: string;
@@ -25,6 +26,7 @@ const state: AppState = {
   totalDownloads: 0,
   searchTerm: '',
   sortBy: 'popular',
+  categoryFilter: 'all',
   loading: true,
   progressText: 'Initializing...',
   progressWidth: '0%',
@@ -52,6 +54,35 @@ const headerTemplate = () => html`
       </div>
     </div>
   </header>
+`;
+
+/**
+ * Returns the HTML template for the category filter tabs.
+ *
+ * @param {(category: 'all' | 'plugin' | 'integration') => void} onFilter Category change handler.
+ * @returns {TemplateResult} The lit-html template result.
+ */
+const filterTabsTemplate = (onFilter: (category: 'all' | 'plugin' | 'integration') => void) => html`
+  <div class="filter-tabs">
+    <button
+      class="filter-tab ${state.categoryFilter === 'all' ? 'active' : ''}"
+      @click=${() => onFilter('all')}
+    >
+      All
+    </button>
+    <button
+      class="filter-tab ${state.categoryFilter === 'plugin' ? 'active' : ''}"
+      @click=${() => onFilter('plugin')}
+    >
+      Lovelace
+    </button>
+    <button
+      class="filter-tab ${state.categoryFilter === 'integration' ? 'active' : ''}"
+      @click=${() => onFilter('integration')}
+    >
+      Integrations
+    </button>
+  </div>
 `;
 
 /**
@@ -94,18 +125,23 @@ const controlsTemplate = (onSearch: (e: Event) => void, onSort: (e: Event) => vo
  *
  * @param {(e: Event) => void} onSearch Search input event handler.
  * @param {(e: Event) => void} onSort Sort selection event handler.
+ * @param {(cat: 'all' | 'plugin' | 'integration') => void} onFilter Category change handler.
  * @returns {TemplateResult} The lit-html template result.
  */
-const appTemplate = (onSearch: (e: Event) => void, onSort: (e: Event) => void) => html`
+const appTemplate = (
+  onSearch: (e: Event) => void,
+  onSort: (e: Event) => void,
+  onFilter: (cat: 'all' | 'plugin' | 'integration') => void,
+) => html`
   ${headerTemplate()}
   <main>
-    ${controlsTemplate(onSearch, onSort)}
+    ${filterTabsTemplate(onFilter)} ${controlsTemplate(onSearch, onSort)}
     <div id="repoGrid" class="grid" aria-live="polite">
       ${state.filteredRepositories.length > 0
         ? repeat(
             state.filteredRepositories,
             (repo) => repo.id,
-            (repo, index) => repoCardTemplate(repo, index),
+            (repo, index) => repoCardTemplate(repo, index, state.searchTerm),
           )
         : html`
             <div
@@ -160,7 +196,7 @@ function updateUI() {
   if (state.loading) {
     render(loaderTemplate(), app);
   } else {
-    render(appTemplate(handleSearch, handleSort), app);
+    render(appTemplate(handleSearch, handleSort, handleFilter), app);
   }
 
   if (grid && !state.loading) {
@@ -214,15 +250,31 @@ const handleSort = (e: Event) => {
 };
 
 /**
+ * Event handler for category filter tab clicks.
+ *
+ * @param {'all' | 'plugin' | 'integration'} category The selected category.
+ */
+const handleFilter = (category: 'all' | 'plugin' | 'integration') => {
+  state.categoryFilter = category;
+  applyFiltersAndSort();
+  updateUI();
+};
+
+/**
  * Synchronizes the filteredRepositories list based on the current
  * search term and sort criteria stored in state.
  */
 function applyFiltersAndSort() {
-  state.filteredRepositories = state.repositories.filter(
-    (repo) =>
+  state.filteredRepositories = state.repositories.filter((repo) => {
+    const matchesSearch =
       (repo.hacs_name || repo.name).toLowerCase().includes(state.searchTerm) ||
-      (repo.description || '').toLowerCase().includes(state.searchTerm),
-  );
+      (repo.description || '').toLowerCase().includes(state.searchTerm);
+
+    const matchesCategory =
+      state.categoryFilter === 'all' || getRepoCategory(repo.name) === state.categoryFilter;
+
+    return matchesSearch && matchesCategory;
+  });
 
   state.filteredRepositories.sort((a, b) => {
     switch (state.sortBy) {

@@ -1,3 +1,5 @@
+import { html } from 'lit-html';
+
 /**
  * Formats an ISO date string into a human-readable "MMM D, YYYY" format.
  *
@@ -59,4 +61,23 @@ export function debounce<T extends (...args: never[]) => unknown>(
 export function optimizeImageUrl(url: string, width: number): string {
   if (!url || url.startsWith('data:') || url.includes('weserv.nl')) return url;
   return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=${width}&fit=cover&output=webp&q=75&il`;
+}
+
+/**
+ * Highlights the occurrences of a search term within a given text.
+ *
+ * @param {string} text The text to process.
+ * @param {string} query The search term to highlight.
+ * @returns {TemplateResult} The lit-html template with highlighted matches.
+ */
+export function highlightText(text: string, query: string) {
+  if (!query || !query.trim()) return html`${text}`;
+
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+  const parts = text.split(regex);
+
+  return html`${parts.map((part) =>
+    regex.test(part) ? html`<mark class="highlight">${part}</mark>` : part,
+  )}`;
 }

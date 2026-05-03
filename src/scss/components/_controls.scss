@@ -1,3 +1,41 @@
+@use '../mixins' as *;
+
+.filter-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  animation: fadeIn 1s ease-out;
+  margin-bottom: 1.5rem;
+
+  @include respond-to('sm') {
+    flex-wrap: wrap;
+  }
+}
+
+.filter-tab {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+  border-radius: 9999px;
+  background: var(--card-bg);
+  padding: 0.6rem 1.25rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    border-color: var(--accent-color);
+    background: var(--accent-color);
+    color: #fff;
+  }
+}
+
 .controls-container {
   display: flex;
   flex-wrap: wrap;
