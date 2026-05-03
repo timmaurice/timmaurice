@@ -2,14 +2,28 @@ import { html, svg } from 'lit-html';
 import type { Repository } from '@/types';
 import { formatDate, getRepoCategory, optimizeImageUrl } from '@/utils';
 import { generateDynamicIcon, generateDynamicHero, getIconPath } from '@/graphics';
-import { GITHUB_USERNAME } from '@/config';
+import { GITHUB_USERNAME, RECENTLY_UPDATED_THRESHOLD_DAYS, MS_PER_DAY } from '@/config';
 
+/**
+ * Returns a Lit-html SVG template for a specific UI icon.
+ *
+ * @param {'star' | 'download'} name The icon name.
+ * @param {string} className Optional CSS class to apply to the SVG element.
+ * @returns {TemplateResult} The lit-html template result.
+ */
 export const iconTemplate = (name: 'star' | 'download', className: string) => svg`
   <svg viewBox="0 0 16 16" class="${className}" aria-hidden="true">
     <path d="${getIconPath(name)}"></path>
   </svg>
 `;
 
+/**
+ * Returns the HTML template for an individual repository card.
+ *
+ * @param {Repository} repo The repository data object.
+ * @param {number} index The index of the card in the list (used for priority loading).
+ * @returns {TemplateResult} The lit-html template result.
+ */
 export const repoCardTemplate = (repo: Repository, index: number) => {
   const category = getRepoCategory(repo.name);
   let badgeClass = 'badge other';
@@ -36,9 +50,15 @@ export const repoCardTemplate = (repo: Repository, index: number) => {
 
   const isPriority = index < 2;
 
+  const updatedAt = new Date(repo.updated_at).getTime();
+  const now = new Date().getTime();
+  const diffDays = (now - updatedAt) / MS_PER_DAY;
+  const isRecentlyUpdated = diffDays <= RECENTLY_UPDATED_THRESHOLD_DAYS;
+
   return html`
     <article
       class="card"
+      data-id="${repo.id}"
       data-name="${(repo.hacs_name || repo.name).toLowerCase()}"
       data-description="${(repo.description || '').toLowerCase()}"
       data-stars="${repo.stargazers_count}"
@@ -86,7 +106,10 @@ export const repoCardTemplate = (repo: Repository, index: number) => {
             >
               <div class="card-developer">@${GITHUB_USERNAME}</div>
             </a>
-            <span class="${badgeClass}">${badgeText}</span>
+            <div class="badge-group">
+              <span class="${badgeClass}">${badgeText}</span>
+              ${isRecentlyUpdated ? html`<span class="badge updated">Updated</span>` : ''}
+            </div>
           </div>
         </header>
         <div class="card-description">${repo.description || 'No description available.'}</div>
@@ -130,6 +153,12 @@ export const repoCardTemplate = (repo: Repository, index: number) => {
   `;
 };
 
+/**
+ * Returns the HTML template for a skeleton repository card, used to
+ * provide visual feedback during the loading state.
+ *
+ * @returns {TemplateResult} The lit-html template result.
+ */
 export const skeletonCardTemplate = () => html`
   <article class="card skeleton-card">
     <div class="card-image-wrapper">
@@ -155,6 +184,12 @@ export const skeletonCardTemplate = () => html`
   </article>
 `;
 
+/**
+ * Returns the HTML template for the error state view.
+ *
+ * @param {string} message The error message to display.
+ * @returns {TemplateResult} The lit-html template result.
+ */
 export const errorTemplate = (message: string) => html`
   <div
     class="error-state"

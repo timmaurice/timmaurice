@@ -8,6 +8,12 @@ import {
   HA_BRANDS_URL,
 } from '@/config';
 
+/**
+ * Checks if a file exists at the given URL using a HEAD request.
+ *
+ * @param {string} url The URL to check.
+ * @returns {Promise<boolean>} Promise resolving to true if the file exists (HTTP 200 OK).
+ */
 async function checkFileExists(url: string): Promise<boolean> {
   try {
     const response = await fetch(url, { method: 'HEAD' });
@@ -17,6 +23,15 @@ async function checkFileExists(url: string): Promise<boolean> {
   }
 }
 
+/**
+ * Searches for a valid image URL (icon or screenshot) in predefined common
+ * locations within a GitHub repository.
+ *
+ * @param {string} baseUrl The base raw GitHub content URL for the repository.
+ * @param {string} repoName The name of the repository.
+ * @param {'icon' | 'screenshot'} type Whether to search for an 'icon' or a 'screenshot'.
+ * @returns {Promise<string | undefined>} Promise resolving to the first valid image URL found, or undefined.
+ */
 async function findImage(
   baseUrl: string,
   repoName: string,
@@ -25,11 +40,9 @@ async function findImage(
   const isCard = repoName.includes('-card') || repoName.includes('lovelace-');
   const domain = repoName.replace('lovelace-', '').replace('-card', '');
 
-  // Prioritize most common names and extensions
   const names = type === 'icon' ? ['icon', 'logo'] : ['screenshot', 'preview', 'image'];
   const extensions = ['.png', '.jpg'];
 
-  // Targeted paths: for cards, look in assets/ and root first
   const paths = isCard
     ? ['', 'assets/', 'images/']
     : [
@@ -48,7 +61,6 @@ async function findImage(
     }
   }
 
-  // Check in smaller parallel chunks to find the first match quickly
   const chunkSize = 8;
   for (let i = 0; i < urls.length; i += chunkSize) {
     const chunk = urls.slice(i, i + chunkSize);
@@ -62,7 +74,14 @@ async function findImage(
   return undefined;
 }
 
-// Simple batching to limit concurrency
+/**
+ * Maps items in parallel with a specified concurrency limit.
+ *
+ * @param {T[]} items List of items to process.
+ * @param {(item: T) => Promise<R>} mapper Async mapping function.
+ * @param {number} concurrency Maximum number of concurrent operations.
+ * @returns {Promise<R[]>} Promise resolving to the mapped results.
+ */
 async function pMap<T, R>(
   items: T[],
   mapper: (item: T) => Promise<R>,
@@ -79,13 +98,18 @@ async function pMap<T, R>(
 
 let sessionRateLimit: { limit: string; remaining: string; reset: string } | undefined;
 
+/**
+ * Extracts and tracks GitHub API rate limit information from a response.
+ *
+ * @param {Response} response The Fetch response object.
+ * @returns {{ limit: string; remaining: string; reset: string } | undefined} Rate limit info.
+ */
 function logRateLimit(response: Response) {
   const limit = response.headers.get('x-ratelimit-limit');
   const remaining = response.headers.get('x-ratelimit-remaining');
   const reset = response.headers.get('x-ratelimit-reset');
 
   if (limit && remaining && reset) {
-    // Only update and log if this is the first one or if the remaining count is lower
     if (!sessionRateLimit || parseInt(remaining) < parseInt(sessionRateLimit.remaining)) {
       sessionRateLimit = { limit, remaining, reset };
     }
@@ -94,10 +118,16 @@ function logRateLimit(response: Response) {
   return undefined;
 }
 
+/**
+ * Fetches all Home Assistant repositories for the configured user,
+ * enriches them with asset URLs (icons, screenshots), and release data.
+ *
+ * @param {(current: number, total: number, name: string) => void} [onProgress] Callback to track progress.
+ * @returns {Promise<Repository[]>} Promise resolving to an array of enriched Repository objects.
+ */
 export async function fetchRepositories(
   onProgress?: (current: number, total: number, name: string) => void,
 ): Promise<Repository[]> {
-  // Check cache first
   const cached = localStorage.getItem(CACHE_KEY);
   if (cached) {
     const { timestamp, repos }: CacheData = JSON.parse(cached);
@@ -114,7 +144,6 @@ export async function fetchRepositories(
   const currentRateLimit = logRateLimit(response);
 
   if (!response.ok) {
-    // If rate limited but we have cache, serve it even if expired
     if (cached) {
       const { repos }: CacheData = JSON.parse(cached);
       return repos;
@@ -123,12 +152,10 @@ export async function fetchRepositories(
   }
   const data: Repository[] = await response.json();
 
-  // Filter: Exclude specific repos AND only include those with 'home-assistant' topic
   const filteredData = data.filter(
     (repo) => !EXCLUDED_REPOS.includes(repo.name) && repo.topics.includes('home-assistant'),
   );
 
-  // Process repositories with concurrency limit
   let processedCount = 0;
   const totalCount = filteredData.length;
 
@@ -146,14 +173,12 @@ export async function fetchRepositories(
           }
         }
       } catch {
-        // Ignore errors
+        // Ignore
       }
 
-      // Fallback names for specific repos if needed
       if (repo.name === 'bergfex') repo.hacs_name = repo.hacs_name || 'Bergfex Scraper';
       if (repo.name === 'feedparser') repo.hacs_name = repo.hacs_name || 'Feedparser';
 
-      // Try Home Assistant Brands first
       const domain = repo.name.replace('lovelace-', '').replace('-card', '');
       const brandsUrl = `${HA_BRANDS_URL}/${domain}/icon.png`;
 
@@ -161,15 +186,12 @@ export async function fetchRepositories(
         repo.icon_url = brandsUrl;
       }
 
-      // Only search for icon if not found in brands
       if (!repo.icon_url) {
         repo.icon_url = await findImage(baseUrl, repo.name, 'icon');
       }
 
-      // Find screenshot
       repo.screenshot_url = await findImage(baseUrl, repo.name, 'screenshot');
 
-      // Fetch release info for downloads
       try {
         const releasesResponse = await fetch(
           `https://api.github.com/repos/${GITHUB_USERNAME}/${repo.name}/releases`,
@@ -207,7 +229,6 @@ export async function fetchRepositories(
 
   const result = reposWithHacs.filter((repo): repo is Repository => repo !== null);
 
-  // Save to cache
   localStorage.setItem(
     CACHE_KEY,
     JSON.stringify({

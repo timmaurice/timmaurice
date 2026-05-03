@@ -1,13 +1,11 @@
 import '@/scss/main.scss';
 import { html, render } from 'lit-html';
+import { repeat } from 'lit-html/directives/repeat.js';
 import { fetchRepositories } from '@/api';
 import type { Repository } from '@/types';
 import { repoCardTemplate, errorTemplate, iconTemplate, skeletonCardTemplate } from '@/ui';
 import { debounce } from '@/utils';
 
-/**
- * APPLICATION STATE
- */
 interface AppState {
   repositories: Repository[];
   filteredRepositories: Repository[];
@@ -33,9 +31,11 @@ const state: AppState = {
 };
 
 /**
- * TEMPLATES
+ * Returns the HTML template for the application header, including title
+ * and aggregate project statistics.
+ *
+ * @returns {TemplateResult} The lit-html template result.
  */
-
 const headerTemplate = () => html`
   <header class="app-header">
     <h1>Home Assistant Apps</h1>
@@ -54,6 +54,13 @@ const headerTemplate = () => html`
   </header>
 `;
 
+/**
+ * Returns the HTML template for the search input and sort selection dropdown.
+ *
+ * @param {(e: Event) => void} onSearch Callback for input events on the search field.
+ * @param {(e: Event) => void} onSort Callback for change events on the sort dropdown.
+ * @returns {TemplateResult} The lit-html template result.
+ */
 const controlsTemplate = (onSearch: (e: Event) => void, onSort: (e: Event) => void) => html`
   <div class="controls-container">
     <div class="input-group">
@@ -81,13 +88,25 @@ const controlsTemplate = (onSearch: (e: Event) => void, onSort: (e: Event) => vo
   </div>
 `;
 
+/**
+ * Returns the main application template, containing the header, controls,
+ * and the grid of repository cards.
+ *
+ * @param {(e: Event) => void} onSearch Search input event handler.
+ * @param {(e: Event) => void} onSort Sort selection event handler.
+ * @returns {TemplateResult} The lit-html template result.
+ */
 const appTemplate = (onSearch: (e: Event) => void, onSort: (e: Event) => void) => html`
   ${headerTemplate()}
   <main>
     ${controlsTemplate(onSearch, onSort)}
     <div id="repoGrid" class="grid" aria-live="polite">
       ${state.filteredRepositories.length > 0
-        ? state.filteredRepositories.map((repo, index) => repoCardTemplate(repo, index))
+        ? repeat(
+            state.filteredRepositories,
+            (repo) => repo.id,
+            (repo, index) => repoCardTemplate(repo, index),
+          )
         : html`
             <div
               style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: rgba(255,255,255,0.03); border-radius: 1.25rem;"
@@ -99,6 +118,12 @@ const appTemplate = (onSearch: (e: Event) => void, onSort: (e: Event) => void) =
   </main>
 `;
 
+/**
+ * Returns the loading state template, featuring a progress bar and
+ * animated skeleton cards to prevent layout shift.
+ *
+ * @returns {TemplateResult} The lit-html template result.
+ */
 const loaderTemplate = () => html`
   ${headerTemplate()}
   <main>
@@ -115,41 +140,90 @@ const loaderTemplate = () => html`
 `;
 
 /**
- * RENDERING & LOGIC
+ * Updates the entire application UI based on the current global state.
+ * Implements FLIP animations to ensure smooth transitions when reordering cards.
  */
-
 function updateUI() {
   const app = document.querySelector<HTMLDivElement>('#app')!;
   if (!app) return;
+
+  const grid = document.getElementById('repoGrid');
+  const firstRects = new Map<string, DOMRect>();
+
+  if (grid) {
+    Array.from(grid.children).forEach((child) => {
+      const id = child.getAttribute('data-id');
+      if (id) firstRects.set(id, child.getBoundingClientRect());
+    });
+  }
 
   if (state.loading) {
     render(loaderTemplate(), app);
   } else {
     render(appTemplate(handleSearch, handleSort), app);
   }
+
+  if (grid && !state.loading) {
+    requestAnimationFrame(() => {
+      const newGrid = document.getElementById('repoGrid');
+      if (!newGrid) return;
+
+      Array.from(newGrid.children).forEach((child) => {
+        const id = child.getAttribute('data-id');
+        const firstRect = id ? firstRects.get(id) : null;
+
+        if (firstRect) {
+          const lastRect = child.getBoundingClientRect();
+          const dx = firstRect.left - lastRect.left;
+          const dy = firstRect.top - lastRect.top;
+
+          if (dx !== 0 || dy !== 0) {
+            child.animate(
+              [
+                { transform: `translate3d(${dx}px, ${dy}px, 0)` },
+                { transform: 'translate3d(0, 0, 0)' },
+              ],
+              {
+                duration: 400,
+                easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+              },
+            );
+          }
+        }
+      });
+    });
+  }
 }
 
+/**
+ * Event handler for search input, debounced to prevent excessive re-renders.
+ */
 const handleSearch = debounce((e: Event) => {
   state.searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
   applyFiltersAndSort();
   updateUI();
 }, 300);
 
+/**
+ * Event handler for changes in the sort dropdown selection.
+ */
 const handleSort = (e: Event) => {
   state.sortBy = (e.target as HTMLSelectElement).value;
   applyFiltersAndSort();
   updateUI();
 };
 
+/**
+ * Synchronizes the filteredRepositories list based on the current
+ * search term and sort criteria stored in state.
+ */
 function applyFiltersAndSort() {
-  // Filter
   state.filteredRepositories = state.repositories.filter(
     (repo) =>
       (repo.hacs_name || repo.name).toLowerCase().includes(state.searchTerm) ||
       (repo.description || '').toLowerCase().includes(state.searchTerm),
   );
 
-  // Sort
   state.filteredRepositories.sort((a, b) => {
     switch (state.sortBy) {
       case 'popular':
@@ -168,6 +242,10 @@ function applyFiltersAndSort() {
   });
 }
 
+/**
+ * Main application entry point. Fetches repository data, calculates
+ * initial stats, and triggers the first render.
+ */
 async function init() {
   updateUI();
 
@@ -188,7 +266,6 @@ async function init() {
     applyFiltersAndSort();
     updateUI();
 
-    // Dynamic preload for top 2
     state.filteredRepositories.slice(0, 2).forEach((repo) => {
       if (repo.screenshot_url) {
         const link = document.createElement('link');

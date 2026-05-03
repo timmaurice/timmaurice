@@ -1,5 +1,8 @@
 /**
- * Generates a deterministic color based on a string
+ * Generates a deterministic HSL color string based on an input string.
+ *
+ * @param {string} str The input string (e.g., repository name).
+ * @returns {string} The HSL color string.
  */
 function stringToColor(str: string): string {
   let hash = 0;
@@ -11,7 +14,10 @@ function stringToColor(str: string): string {
 }
 
 /**
- * Gets initials from a repository name
+ * Extracts up to two initials from a repository name.
+ *
+ * @param {string} name The repository name.
+ * @returns {string} The initials.
  */
 function getInitials(name: string): string {
   return name
@@ -23,6 +29,12 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
+/**
+ * Safely converts a string to a base64 encoded Data URL segment.
+ *
+ * @param {string} str The input string (HTML/SVG markup).
+ * @returns {string} The base64 encoded segment.
+ */
 function toBase64(str: string): string {
   try {
     return btoa(unescape(encodeURIComponent(str)));
@@ -32,7 +44,10 @@ function toBase64(str: string): string {
 }
 
 /**
- * Generates a Data URL for a dynamic icon SVG
+ * Generates a Data URL for a dynamic SVG icon based on a repository name.
+ *
+ * @param {string} name The repository name.
+ * @returns {string} The SVG Data URL.
  */
 export function generateDynamicIcon(name: string): string {
   const color = stringToColor(name);
@@ -52,7 +67,12 @@ export function generateDynamicIcon(name: string): string {
 }
 
 /**
- * Generates a Data URL for a dynamic hero/screenshot SVG
+ * Generates a Data URL for a dynamic SVG hero/screenshot based on repository
+ * name and description.
+ *
+ * @param {string} name Repository name.
+ * @param {string} description Repository description.
+ * @returns {string} The SVG Data URL.
  */
 export function generateDynamicHero(name: string, description: string): string {
   const color = stringToColor(name);
@@ -83,7 +103,10 @@ export function generateDynamicHero(name: string, description: string): string {
 export type IconName = 'star' | 'download';
 
 /**
- * Returns the SVG path content for common icons
+ * Returns the SVG path data for common UI icons.
+ *
+ * @param {IconName} name The specific icon name ('star' or 'download').
+ * @returns {string} The SVG path segment.
  */
 export function getIconPath(name: IconName): string {
   const icons: Record<IconName, string> = {
