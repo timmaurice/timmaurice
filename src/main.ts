@@ -5,6 +5,24 @@ import { fetchRepositories } from '@/api';
 import type { Repository } from '@/types';
 import { repoCardTemplate, errorTemplate, iconTemplate, skeletonCardTemplate } from '@/ui';
 import { debounce, getRepoCategory } from '@/utils';
+import { ANALYTICS_WEBSITE_ID, ANALYTICS_DOMAINS } from '@/config';
+
+/**
+ * Dynamically injects the Umami analytics script into the document head.
+ */
+function injectAnalytics() {
+  if (!ANALYTICS_WEBSITE_ID) return;
+
+  const script = document.createElement('script');
+  script.async = true;
+  script.defer = true;
+  script.src = 'https://cloud.umami.is/script.js';
+  script.setAttribute('data-website-id', ANALYTICS_WEBSITE_ID);
+  if (ANALYTICS_DOMAINS) {
+    script.setAttribute('data-domains', ANALYTICS_DOMAINS);
+  }
+  document.head.appendChild(script);
+}
 
 interface AppState {
   repositories: Repository[];
@@ -234,7 +252,8 @@ const handleSearch = debounce((e: Event) => {
   state.searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
 
   if (window.umami && state.searchTerm.length > 2) {
-    window.umami.track('search', { query: state.searchTerm });
+    console.log('[Analytics] Tracking search:', state.searchTerm);
+    window.umami.track('search-query', { query: state.searchTerm });
   }
 
   applyFiltersAndSort();
@@ -248,7 +267,8 @@ const handleSort = (e: Event) => {
   state.sortBy = (e.target as HTMLSelectElement).value;
 
   if (window.umami) {
-    window.umami.track('sort', { type: state.sortBy });
+    console.log('[Analytics] Tracking sort:', state.sortBy);
+    window.umami.track('sort-change', { type: state.sortBy });
   }
 
   applyFiltersAndSort();
@@ -264,6 +284,7 @@ const handleFilter = (category: 'all' | 'plugin' | 'integration') => {
   state.categoryFilter = category;
 
   if (window.umami) {
+    console.log('[Analytics] Tracking filter:', category);
     window.umami.track('filter-category', { category });
   }
 
@@ -321,6 +342,7 @@ function applyFiltersAndSort() {
  * initial stats, and triggers the first render.
  */
 async function init() {
+  injectAnalytics();
   console.log('[App] App starting...');
   updateUI();
 
