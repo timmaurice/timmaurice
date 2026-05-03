@@ -1,6 +1,6 @@
 import { html, svg, render } from 'lit-html';
 import type { Repository } from '@/types';
-import { formatDate, getRepoCategory, optimizeImageUrl, highlightText } from '@/utils';
+import { formatDate, getRepoCategory, optimizeImageUrl, highlightText, trackEvent } from '@/utils';
 import { generateDynamicIcon, generateDynamicHero, getIconPath } from '@/graphics';
 import { GITHUB_USERNAME, RECENTLY_UPDATED_THRESHOLD_DAYS, MS_PER_DAY } from '@/config';
 
@@ -31,9 +31,7 @@ async function handleCopy(url: string, e: MouseEvent, repoName: string) {
   const btn = (e.target as HTMLElement).closest('.copy-btn');
   if (!btn) return;
 
-  if (window.umami) {
-    window.umami.track('copy-url', { repository: repoName });
-  }
+  trackEvent('copy-url', { repository: repoName });
 
   try {
     await navigator.clipboard.writeText(url);
@@ -131,6 +129,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
               target="_blank"
               rel="noopener noreferrer"
               class="card-title-link"
+              @click=${() => trackEvent('repo-click', { repository: repo.name })}
             >
               <h2 class="card-title">${highlightText(displayName, searchTerm)}</h2>
             </a>
@@ -139,6 +138,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
               target="_blank"
               rel="noopener noreferrer"
               class="card-developer-link"
+              @click=${() => trackEvent('developer-click', { developer: GITHUB_USERNAME })}
             >
               <div class="card-developer">@${GITHUB_USERNAME}</div>
             </a>
@@ -252,7 +252,10 @@ export const errorTemplate = (message: string) => html`
     <h3 style="color: #ef4444; margin-bottom: 0.5rem;">Oops! Something went wrong</h3>
     <p style="color: var(--text-secondary);">${message}</p>
     <button
-      @click=${() => window.location.reload()}
+      @click=${() => {
+        trackEvent('error-reload');
+        window.location.reload();
+      }}
       style="margin-top: 1.5rem; padding: 0.5rem 1.5rem; border-radius: 9999px; background: var(--accent-color); color: white; border: none; cursor: pointer; font-weight: 600;"
     >
       Try Again

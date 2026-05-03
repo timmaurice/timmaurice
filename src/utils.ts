@@ -81,3 +81,15 @@ export function highlightText(text: string, query: string) {
     regex.test(part) ? html`<mark class="highlight">${part}</mark>` : part,
   )}`;
 }
+
+/**
+ * Tracks a custom event using Umami analytics if available.
+ *
+ * @param {string} name The event name.
+ * @param {Record<string, string | number | boolean>} data Optional event data.
+ */
+export function trackEvent(name: string, data?: Record<string, string | number | boolean>) {
+  if (window.umami) {
+    window.umami.track(name, data);
+  }
+}

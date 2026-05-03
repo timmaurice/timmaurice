@@ -4,7 +4,7 @@ import { repeat } from 'lit-html/directives/repeat.js';
 import { fetchRepositories } from '@/api';
 import type { Repository } from '@/types';
 import { repoCardTemplate, errorTemplate, iconTemplate, skeletonCardTemplate } from '@/ui';
-import { debounce, getRepoCategory } from '@/utils';
+import { debounce, getRepoCategory, trackEvent } from '@/utils';
 import { ANALYTICS_WEBSITE_ID, ANALYTICS_DOMAINS } from '@/config';
 
 /**
@@ -251,8 +251,8 @@ function updateUI() {
 const handleSearch = debounce((e: Event) => {
   state.searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
 
-  if (window.umami && state.searchTerm.length > 2) {
-    window.umami.track('search-query', { query: state.searchTerm });
+  if (state.searchTerm.length > 2) {
+    trackEvent('search-query', { query: state.searchTerm });
   }
 
   applyFiltersAndSort();
@@ -262,9 +262,7 @@ const handleSearch = debounce((e: Event) => {
 const handleSort = (e: Event) => {
   state.sortBy = (e.target as HTMLSelectElement).value;
 
-  if (window.umami) {
-    window.umami.track('sort-change', { type: state.sortBy });
-  }
+  trackEvent('sort-change', { type: state.sortBy });
 
   applyFiltersAndSort();
   updateUI();
@@ -273,9 +271,7 @@ const handleSort = (e: Event) => {
 const handleFilter = (category: 'all' | 'plugin' | 'integration') => {
   state.categoryFilter = category;
 
-  if (window.umami) {
-    window.umami.track('filter-category', { category });
-  }
+  trackEvent('filter-category', { category });
 
   applyFiltersAndSort();
   updateUI();
