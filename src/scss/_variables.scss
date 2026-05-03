@@ -1,0 +1,19 @@
+$breakpoints: (
+  'sm': 576px,
+  'md': 768px,
+  'lg': 992px,
+  'xl': 1200px,
+);
+
+:root {
+  --bg-color: #0f1115;
+  --bg-gradient: radial-gradient(circle at top right, #1a1e26, #0f1115);
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.05);
+  --text-primary: #f0f2f5;
+  --text-secondary: #a0a5b1;
+  --accent-color: #2563eb;
+  --accent-text: #60a5fa;
+  --accent-hover: #1d4ed8;
+  --success-color: #10b981;
+}

@@ -1,18 +1,12 @@
-import type { Repository, CacheData } from './types';
-
-const GITHUB_USERNAME = 'timmaurice';
-const CACHE_KEY = 'gh_repos_cache';
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
-const CONCURRENCY_LIMIT = 5;
-
-const EXCLUDED_REPOS = [
-  'pqina-flip-clock-card', // PQINA flip clock
-  'Ultra-Vehicle-Card', // Ultra Vehicle Card
-  'xtend_tuya', // Xtend Tuya
-];
-
-const HA_BRANDS_URL =
-  'https://raw.githubusercontent.com/home-assistant/brands/master/custom_integrations';
+import type { Repository, CacheData } from '@/types';
+import {
+  GITHUB_USERNAME,
+  CACHE_KEY,
+  CACHE_DURATION,
+  CONCURRENCY_LIMIT,
+  EXCLUDED_REPOS,
+  HA_BRANDS_URL,
+} from '@/config';
 
 async function checkFileExists(url: string): Promise<boolean> {
   try {
@@ -55,7 +49,6 @@ async function findImage(
   }
 
   // Check in smaller parallel chunks to find the first match quickly
-  // Increased chunk size for better parallelism on fast networks
   const chunkSize = 8;
   for (let i = 0; i < urls.length; i += chunkSize) {
     const chunk = urls.slice(i, i + chunkSize);
@@ -92,12 +85,9 @@ function logRateLimit(response: Response) {
   const reset = response.headers.get('x-ratelimit-reset');
 
   if (limit && remaining && reset) {
-    const resetDate = new Date(parseInt(reset) * 1000).toLocaleTimeString();
-
     // Only update and log if this is the first one or if the remaining count is lower
     if (!sessionRateLimit || parseInt(remaining) < parseInt(sessionRateLimit.remaining)) {
       sessionRateLimit = { limit, remaining, reset };
-      console.log(`[GitHub API] Rate Limit: ${remaining}/${limit} (Resets at ${resetDate})`);
     }
     return { limit, remaining, reset };
   }
@@ -110,14 +100,8 @@ export async function fetchRepositories(
   // Check cache first
   const cached = localStorage.getItem(CACHE_KEY);
   if (cached) {
-    const { timestamp, repos, rateLimit }: CacheData = JSON.parse(cached);
+    const { timestamp, repos }: CacheData = JSON.parse(cached);
     if (Date.now() - timestamp < CACHE_DURATION) {
-      if (rateLimit) {
-        const resetDate = new Date(parseInt(rateLimit.reset) * 1000).toLocaleTimeString();
-        console.log(
-          `[Cached] Last Rate Limit: ${rateLimit.remaining}/${rateLimit.limit} (Resets at ${resetDate})`,
-        );
-      }
       console.log('Serving from cache...');
       return repos;
     }
@@ -169,7 +153,7 @@ export async function fetchRepositories(
       if (repo.name === 'bergfex') repo.hacs_name = repo.hacs_name || 'Bergfex Scraper';
       if (repo.name === 'feedparser') repo.hacs_name = repo.hacs_name || 'Feedparser';
 
-      // Try Home Assistant Brands first (non-rate-limited, fast, 0% chance of cluttering console with 404s if successful)
+      // Try Home Assistant Brands first
       const domain = repo.name.replace('lovelace-', '').replace('-card', '');
       const brandsUrl = `${HA_BRANDS_URL}/${domain}/icon.png`;
 
@@ -182,7 +166,7 @@ export async function fetchRepositories(
         repo.icon_url = await findImage(baseUrl, repo.name, 'icon');
       }
 
-      // Find screenshot (only if it's likely to have one)
+      // Find screenshot
       repo.screenshot_url = await findImage(baseUrl, repo.name, 'screenshot');
 
       // Fetch release info for downloads

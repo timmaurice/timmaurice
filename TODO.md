@@ -1,20 +1,22 @@
 # 📋 Missing Assets Todo List
 
+> **Project Stats:** ⭐ 286 Total Stars | 📥 125,507 Total Downloads
+
 This list identifies repositories that are currently missing a custom icon or screenshot.
 
 ## 🎨 Lovelace Cards
 
 | Repository | Icon | Screenshot |
 | :--- | :---: | :---: |
-| `lovelace-background-graph-entities` | ❌ | ✅ |
-| `lovelace-bergfex-card` | ❌ | ✅ |
+| `lovelace-background-graph-entities` | ✅ | ✅ |
+| `lovelace-bergfex-card` | ✅ | ✅ |
 | `lovelace-blitzortung-lightning-card` | ✅ | ✅ |
-| `lovelace-nina-dwd-card` | ❌ | ✅ |
-| `lovelace-radar-card` | ❌ | ✅ |
-| `lovelace-rss-accordion` | ❌ | ✅ |
-| `lovelace-sea-temperatures-card` | ❌ | ✅ |
-| `lovelace-tankerkoenig-card` | ❌ | ✅ |
-| `lovelace-windy-card` | ❌ | ✅ |
+| `lovelace-nina-dwd-card` | ✅ | ✅ |
+| `lovelace-radar-card` | ✅ | ✅ |
+| `lovelace-rss-accordion` | ✅ | ✅ |
+| `lovelace-sea-temperatures-card` | ✅ | ✅ |
+| `lovelace-tankerkoenig-card` | ✅ | ✅ |
+| `lovelace-windy-card` | ✅ | ✅ |
 
 ## 🔌 Integrations
 
