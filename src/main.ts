@@ -252,7 +252,6 @@ const handleSearch = debounce((e: Event) => {
   state.searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
 
   if (window.umami && state.searchTerm.length > 2) {
-    console.log('[Analytics] Tracking search:', state.searchTerm);
     window.umami.track('search-query', { query: state.searchTerm });
   }
 
@@ -260,14 +259,10 @@ const handleSearch = debounce((e: Event) => {
   updateUI();
 }, 300);
 
-/**
- * Event handler for changes in the sort dropdown selection.
- */
 const handleSort = (e: Event) => {
   state.sortBy = (e.target as HTMLSelectElement).value;
 
   if (window.umami) {
-    console.log('[Analytics] Tracking sort:', state.sortBy);
     window.umami.track('sort-change', { type: state.sortBy });
   }
 
@@ -275,16 +270,10 @@ const handleSort = (e: Event) => {
   updateUI();
 };
 
-/**
- * Event handler for category filter tab clicks.
- *
- * @param {'all' | 'plugin' | 'integration'} category The selected category.
- */
 const handleFilter = (category: 'all' | 'plugin' | 'integration') => {
   state.categoryFilter = category;
 
   if (window.umami) {
-    console.log('[Analytics] Tracking filter:', category);
     window.umami.track('filter-category', { category });
   }
 
