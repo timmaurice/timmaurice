@@ -54,6 +54,7 @@ async function findImage(
         `custom_components/${domain.replace(/-/g, '')}/brand/`,
         '',
         'branding/',
+        'frontend/',
       ];
 
   const urls: string[] = [];

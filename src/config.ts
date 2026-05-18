@@ -4,6 +4,7 @@ export const EXCLUDED_REPOS = [
   'pqina-flip-clock-card', // PQINA flip clock
   'Ultra-Vehicle-Card', // Ultra Vehicle Card
   'xtend_tuya', // Xtend Tuya
+  'lovelace-sea-temperatures-card', // Sea Temperatures Card (Archived)
 ];
 
 // Time units in milliseconds

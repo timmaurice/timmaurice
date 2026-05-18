@@ -14,7 +14,6 @@ This list identifies repositories that are currently missing a custom icon or sc
 | `lovelace-nina-dwd-card` | ✅ | ✅ |
 | `lovelace-radar-card` | ✅ | ✅ |
 | `lovelace-rss-accordion` | ✅ | ✅ |
-| `lovelace-sea-temperatures-card` | ✅ | ✅ |
 | `lovelace-tankerkoenig-card` | ✅ | ✅ |
 | `lovelace-windy-card` | ✅ | ✅ |
 
@@ -24,7 +23,7 @@ This list identifies repositories that are currently missing a custom icon or sc
 | :--- | :---: | :---: |
 | `bergfex` | ✅ | ❌ |
 | `feedparser` | ✅ | ❌ |
-| `sea-temperatures` | ✅ | ❌ |
+| `sea-temperatures` | ✅ | ✅ |
 | `skyline-webcams` | ✅ | ✅ |
 
 ---
