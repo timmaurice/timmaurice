@@ -162,33 +162,35 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
           <time class="stat" datetime="${repo.updated_at}">${formatDate(repo.updated_at)}</time>
         </footer>
         <div class="card-actions">
-          ${installUrl
-            ? html`
-                <a
-                  href="${installUrl}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="install-btn"
-                  aria-label="Install ${repo.hacs_name || repo.name} via HACS"
-                  data-umami-event="install-click"
-                  data-umami-event-repository="${repo.name}"
-                >
-                  GET
-                </a>
-              `
-            : html`
-                <a
-                  href="${repo.html_url}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="install-btn view-btn"
-                  aria-label="View ${repo.hacs_name || repo.name} on GitHub"
-                  data-umami-event="view-click"
-                  data-umami-event-repository="${repo.name}"
-                >
-                  VIEW
-                </a>
-              `}
+          ${
+            installUrl
+              ? html`
+                  <a
+                    href="${installUrl}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="install-btn"
+                    aria-label="Install ${repo.hacs_name || repo.name} via HACS"
+                    data-umami-event="install-click"
+                    data-umami-event-repository="${repo.name}"
+                  >
+                    GET
+                  </a>
+                `
+              : html`
+                  <a
+                    href="${repo.html_url}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="install-btn view-btn"
+                    aria-label="View ${repo.hacs_name || repo.name} on GitHub"
+                    data-umami-event="view-click"
+                    data-umami-event-repository="${repo.name}"
+                  >
+                    VIEW
+                  </a>
+                `
+          }
           <button
             class="copy-btn"
             title="Copy HACS Repository URL"

@@ -109,7 +109,7 @@ let sessionRateLimit: { limit: string; remaining: string; reset: string } | unde
  * @param {Response} response The Fetch response object.
  * @returns {{ limit: string; remaining: string; reset: string } | undefined} Rate limit info.
  */
-function logRateLimit(response: Response) {
+export function logRateLimit(response: Response) {
   const limit = response.headers.get('x-ratelimit-limit');
   const remaining = response.headers.get('x-ratelimit-remaining');
   const reset = response.headers.get('x-ratelimit-reset');
@@ -182,7 +182,7 @@ export async function fetchRepositories(
 
   // Flexible filtering: include common variations of the topic
   const haTopics = ['home-assistant', 'homeassistant', 'hacs'];
-  const filteredData = data.filter((repo: any) => {
+  const filteredData = data.filter((repo: Repository) => {
     const isExcluded = EXCLUDED_REPOS.includes(repo.name);
     const topics = repo.topics || [];
     const hasHATopic = topics.some((t: string) => haTopics.includes(t.toLowerCase()));

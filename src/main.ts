@@ -150,19 +150,21 @@ const appTemplate = (
   <main>
     ${filterTabsTemplate(onFilter)} ${controlsTemplate(onSearch, onSort)}
     <div id="repoGrid" class="grid" aria-live="polite">
-      ${state.filteredRepositories.length > 0
-        ? repeat(
-            state.filteredRepositories,
-            (repo) => repo.id,
-            (repo, index) => repoCardTemplate(repo, index, state.searchTerm),
-          )
-        : html`
-            <div
-              style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: rgba(255,255,255,0.03); border-radius: 1.25rem;"
-            >
-              <p style="color: var(--text-secondary);">No Home Assistant repositories found.</p>
-            </div>
-          `}
+      ${
+        state.filteredRepositories.length > 0
+          ? repeat(
+              state.filteredRepositories,
+              (repo) => repo.id,
+              (repo, index) => repoCardTemplate(repo, index, state.searchTerm),
+            )
+          : html`
+              <div
+                style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: rgba(255,255,255,0.03); border-radius: 1.25rem;"
+              >
+                <p style="color: var(--text-secondary);">No Home Assistant repositories found.</p>
+              </div>
+            `
+      }
     </div>
   </main>
 `;
