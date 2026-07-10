@@ -19,14 +19,6 @@
 
 ---
 
-## 📊 GitHub Stats
-
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs?username=timmaurice&show_icons=true&locale=en&layout=compact)
-
-<!--![Tim's GitHub stats](https://github-readme-stats.vercel.app/api?username=timmaurice&show_icons=true&locale=en)-->
-
----
-
 ## 🌟 Discover My Home Assistant Projects
 
 I've created a central hub to easily explore, search, and install all of my custom Lovelace cards and integrations.
