@@ -6,6 +6,8 @@ import {
   CONCURRENCY_LIMIT,
   EXCLUDED_REPOS,
   HA_BRANDS_URL,
+  BRANDS_DOMAINS_URL,
+  JSDELIVR_DATA_URL,
 } from '@/config';
 
 /**
@@ -28,19 +30,13 @@ async function checkFileExists(url: string): Promise<boolean> {
 }
 
 /**
- * Searches for a valid image URL (icon or screenshot) in predefined common
- * locations within a GitHub repository.
+ * Lists the relative paths where an icon or screenshot may live, in priority order.
  *
- * @param {string} baseUrl The base raw GitHub content URL for the repository.
- * @param {string} repoName The name of the repository.
- * @param {'icon' | 'screenshot'} type Whether to search for an 'icon' or a 'screenshot'.
- * @returns {Promise<string | undefined>} Promise resolving to the first valid image URL found, or undefined.
+ * @param {string} repoName Repository name, used to tell cards from integrations.
+ * @param {'icon' | 'screenshot'} type Whether to look for an 'icon' or a 'screenshot'.
+ * @returns {string[]} Candidate paths relative to the repository root.
  */
-async function findImage(
-  baseUrl: string,
-  repoName: string,
-  type: 'icon' | 'screenshot',
-): Promise<string | undefined> {
+export function imageCandidates(repoName: string, type: 'icon' | 'screenshot'): string[] {
   const isCard = repoName.includes('-card') || repoName.includes('lovelace-');
   const domain = repoName.replace('lovelace-', '').replace('-card', '');
 
@@ -57,15 +53,43 @@ async function findImage(
         'frontend/',
       ];
 
-  const urls: string[] = [];
+  const candidates: string[] = [];
   for (const path of paths) {
     for (const name of names) {
       for (const ext of extensions) {
-        urls.push(`${baseUrl}/${path}${name}${ext}`);
+        candidates.push(`${path}${name}${ext}`);
       }
     }
   }
+  return candidates;
+}
 
+/**
+ * Searches for a valid image URL (icon or screenshot) in predefined common
+ * locations within a GitHub repository.
+ *
+ * @param {string} baseUrl The base raw GitHub content URL for the repository.
+ * @param {string} repoName The name of the repository.
+ * @param {'icon' | 'screenshot'} type Whether to search for an 'icon' or a 'screenshot'.
+ * @param {Set<string> | null} [files] The repository's file paths; when given, no request is made.
+ * @returns {Promise<string | undefined>} Promise resolving to the first valid image URL found, or undefined.
+ */
+async function findImage(
+  baseUrl: string,
+  repoName: string,
+  type: 'icon' | 'screenshot',
+  files?: Set<string> | null,
+): Promise<string | undefined> {
+  const candidates = imageCandidates(repoName, type);
+
+  // With the repository's file list the answer needs no request at all.
+  if (files) {
+    const found = candidates.find((path) => files.has(path));
+    return found ? `${baseUrl}/${found}` : undefined;
+  }
+
+  // Fallback (file list unavailable, e.g. rate limited): probe the candidates.
+  const urls = candidates.map((path) => `${baseUrl}/${path}`);
   const chunkSize = 8;
   for (let i = 0; i < urls.length; i += chunkSize) {
     const chunk = urls.slice(i, i + chunkSize);
@@ -77,6 +101,46 @@ async function findImage(
   }
 
   return undefined;
+}
+
+/**
+ * Fetches the paths of all files in a repository branch from jsDelivr's listing API.
+ * Unlike the GitHub API it does not count against the 60 requests per hour that an
+ * unauthenticated visitor gets, which the repo list and release lookups already use.
+ * The listing can lag behind the branch for a few hours, which is fine for images.
+ *
+ * @param {string} repoName Repository name.
+ * @param {string} branch Branch to list.
+ * @returns {Promise<Set<string> | null>} File paths, or null when the listing is unavailable.
+ */
+async function fetchRepoFiles(repoName: string, branch: string): Promise<Set<string> | null> {
+  try {
+    const response = await fetch(
+      `${JSDELIVR_DATA_URL}/${GITHUB_USERNAME}/${repoName}@${branch}?structure=flat`,
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!Array.isArray(data?.files)) return null;
+    return new Set(data.files.map((file: { name: string }) => file.name.replace(/^\//, '')));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetches the custom integration domains that have an icon in home-assistant/brands.
+ *
+ * @returns {Promise<Set<string> | null>} Domains, or null when the index is unavailable.
+ */
+async function fetchBrandDomains(): Promise<Set<string> | null> {
+  try {
+    const response = await fetch(BRANDS_DOMAINS_URL);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return Array.isArray(data?.custom) ? new Set<string>(data.custom) : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -194,6 +258,9 @@ export async function fetchRepositories(
 
   console.log(`[API] Repositories after HA topic filter: ${filteredData.length}`);
 
+  // One index instead of a HEAD request per repo against home-assistant/brands.
+  const brandDomains = await fetchBrandDomains();
+
   let processedCount = 0;
   const totalCount = filteredData.length;
 
@@ -201,11 +268,14 @@ export async function fetchRepositories(
     filteredData,
     async (repo) => {
       const baseUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${repo.name}/${repo.default_branch}`;
+      // Knowing the files up front avoids guessing image paths (one 404 per wrong guess).
+      const files = await fetchRepoFiles(repo.name, repo.default_branch);
 
       // 1. Fetch HACS metadata
       try {
-        const hacsResponse = await fetch(`${baseUrl}/hacs.json`);
-        if (hacsResponse.ok) {
+        const hacsResponse =
+          files && !files.has('hacs.json') ? null : await fetch(`${baseUrl}/hacs.json`);
+        if (hacsResponse?.ok) {
           const hacsData = await hacsResponse.json();
           if (hacsData.name) {
             repo.hacs_name = hacsData.name;
@@ -223,16 +293,19 @@ export async function fetchRepositories(
       const domain = repo.name.replace('lovelace-', '').replace('-card', '');
       const brandsUrl = `${HA_BRANDS_URL}/${domain}/icon.png`;
 
-      if (await checkFileExists(brandsUrl)) {
+      const hasBrandIcon = brandDomains
+        ? brandDomains.has(domain)
+        : await checkFileExists(brandsUrl);
+      if (hasBrandIcon) {
         repo.icon_url = brandsUrl;
       }
 
       if (!repo.icon_url) {
-        repo.icon_url = await findImage(baseUrl, repo.name, 'icon');
+        repo.icon_url = await findImage(baseUrl, repo.name, 'icon', files);
       }
 
       // 3. Fetch Screenshot
-      repo.screenshot_url = await findImage(baseUrl, repo.name, 'screenshot');
+      repo.screenshot_url = await findImage(baseUrl, repo.name, 'screenshot', files);
 
       // 4. Fetch Release Downloads
       try {

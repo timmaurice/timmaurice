@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchRepositories, logRateLimit } from '@/api';
+import { fetchRepositories, imageCandidates, logRateLimit } from '@/api';
 import { CACHE_KEY } from '@/config';
 
 function makeStore() {
@@ -115,5 +115,74 @@ describe('fetchRepositories', () => {
     const result = await fetchRepositories();
 
     expect(result.map((r) => r.name)).toEqual(['lovelace-radar-card']);
+  });
+});
+
+describe('imageCandidates', () => {
+  it('looks in the repo root for cards and in the brand folder first for integrations', () => {
+    expect(imageCandidates('lovelace-radar-card', 'icon').slice(0, 2)).toEqual([
+      'icon.png',
+      'icon.jpg',
+    ]);
+    expect(imageCandidates('sea-temperatures', 'icon').slice(0, 2)).toEqual([
+      'custom_components/sea-temperatures/brand/icon.png',
+      'custom_components/sea-temperatures/brand/icon.jpg',
+    ]);
+    expect(imageCandidates('sea-temperatures', 'icon')).toContain(
+      'custom_components/seatemperatures/brand/icon.png',
+    );
+  });
+});
+
+describe('fetchRepositories image lookup', () => {
+  it('picks images from the jsDelivr file listing and the brands index without probing', async () => {
+    const repos = [
+      { id: 1, name: 'lovelace-radar-card', topics: ['hacs'], default_branch: 'main' },
+      { id: 2, name: 'skyline-webcams', topics: ['hacs'], default_branch: 'main' },
+      { id: 3, name: 'bergfex', topics: ['hacs'], default_branch: 'main' },
+    ];
+    const trees: Record<string, string[]> = {
+      'lovelace-radar-card': ['hacs.json', 'icon.png', 'screenshot.png'],
+      'skyline-webcams': [
+        'hacs.json',
+        'custom_components/skylinewebcams/brand/icon.png',
+        'custom_components/skylinewebcams/brand/logo.png',
+        'image.png',
+      ],
+      bergfex: ['custom_components/bergfex/brand/icon.png', 'image.png'],
+    };
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method === 'HEAD') return Promise.resolve(jsonResponse(null, { ok: false }));
+      if (url.includes('/repos?per_page=100')) return Promise.resolve(jsonResponse(repos));
+      if (url.includes('domains.json')) {
+        return Promise.resolve(jsonResponse({ custom: ['bergfex', 'skylinewebcams'] }));
+      }
+      const listing = url.match(/data\.jsdelivr\.com\/v1\/packages\/gh\/timmaurice\/([^@]+)@/);
+      if (listing) {
+        return Promise.resolve(
+          jsonResponse({ files: trees[listing[1]].map((path) => ({ name: `/${path}` })) }),
+        );
+      }
+      return Promise.resolve(jsonResponse(null, { ok: false }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchRepositories();
+    const byName = Object.fromEntries(result.map((r) => [r.name, r]));
+
+    expect(byName['lovelace-radar-card'].icon_url).toMatch(/lovelace-radar-card\/main\/icon\.png$/);
+    expect(byName['lovelace-radar-card'].screenshot_url).toMatch(/\/screenshot\.png$/);
+    // "skyline-webcams" is not a brands domain, so the repo's own brand icon wins.
+    expect(byName['skyline-webcams'].icon_url).toMatch(
+      /custom_components\/skylinewebcams\/brand\/icon\.png$/,
+    );
+    expect(byName['skyline-webcams'].screenshot_url).toMatch(/skyline-webcams\/main\/image\.png$/);
+    // "bergfex" is listed in brands, which takes precedence over the repo's icon.
+    expect(byName['bergfex'].icon_url).toContain('home-assistant/brands');
+    // Nothing was guessed, and bergfex without a hacs.json was not asked for one.
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'HEAD')).toHaveLength(0);
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url).includes('bergfex/main/hacs.json')),
+    ).toBe(false);
   });
 });
