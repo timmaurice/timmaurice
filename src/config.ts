@@ -12,7 +12,10 @@ export const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 export const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 export const MS_PER_DAY = 24 * MS_PER_HOUR;
 
-export const CACHE_KEY = 'gh_repos_cache';
+// Bump the version whenever the cached repo data gains or changes fields, so a visitor's
+// cache from before a deploy is not read with the new code (v2: released_at).
+export const CACHE_KEY = 'gh_repos_cache_v2';
+export const LEGACY_CACHE_KEYS = ['gh_repos_cache'];
 export const CACHE_DURATION = MS_PER_HOUR; // 1 hour
 export const CONCURRENCY_LIMIT = 5;
 
