@@ -19,6 +19,12 @@ export const CONCURRENCY_LIMIT = 5;
 export const HA_BRANDS_URL =
   'https://raw.githubusercontent.com/home-assistant/brands/master/custom_integrations';
 
+// Index of every domain with an icon in home-assistant/brands (CORS-enabled).
+export const BRANDS_DOMAINS_URL = 'https://brands.home-assistant.io/domains.json';
+
+// File listings of GitHub repos, without the GitHub API rate limit (CORS-enabled).
+export const JSDELIVR_DATA_URL = 'https://data.jsdelivr.com/v1/packages/gh';
+
 export const IMAGE_WESERV_URL = 'https://images.weserv.nl/';
 
 export const RECENTLY_UPDATED_THRESHOLD_DAYS = 7;
