@@ -188,6 +188,21 @@ export function logRateLimit(response: Response) {
 }
 
 /**
+ * Returns the publish date of the latest release: the newest stable one, or the newest
+ * pre-release when there is no stable release. Drafts are ignored.
+ *
+ * @param {{ published_at: string | null; draft: boolean; prerelease: boolean }[]} releases Releases, newest first (as the GitHub API returns them).
+ * @returns {string | undefined} ISO timestamp, or undefined without any published release.
+ */
+export function latestReleaseDate(
+  releases: { published_at: string | null; draft: boolean; prerelease: boolean }[],
+): string | undefined {
+  const published = releases.filter((release) => !release.draft && release.published_at);
+  const latest = published.find((release) => !release.prerelease) ?? published[0];
+  return latest?.published_at ?? undefined;
+}
+
+/**
  * Fetches all Home Assistant repositories for the configured user,
  * enriches them with asset URLs (icons, screenshots), and release data.
  *
@@ -315,6 +330,7 @@ export async function fetchRepositories(
         logRateLimit(releasesResponse);
         if (releasesResponse.ok) {
           const releases = await releasesResponse.json();
+          repo.released_at = latestReleaseDate(releases);
           repo.download_count = releases.reduce(
             (total: number, release: { assets?: { download_count: number }[] }) => {
               return (

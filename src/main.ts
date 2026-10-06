@@ -4,7 +4,7 @@ import { repeat } from 'lit-html/directives/repeat.js';
 import { fetchRepositories } from '@/api';
 import type { Repository } from '@/types';
 import { repoCardTemplate, errorTemplate, iconTemplate, skeletonCardTemplate } from '@/ui';
-import { debounce, getRepoCategory, trackEvent } from '@/utils';
+import { debounce, matchesCategory, releaseDate, trackEvent } from '@/utils';
 import { ANALYTICS_WEBSITE_ID, ANALYTICS_DOMAINS } from '@/config';
 
 /**
@@ -296,10 +296,9 @@ function applyFiltersAndSort() {
     const desc = (repo.description || '').toLowerCase();
 
     const matchesSearch = name.includes(state.searchTerm) || desc.includes(state.searchTerm);
-    const matchesCategory =
-      state.categoryFilter === 'all' || getRepoCategory(repo.name) === state.categoryFilter;
+    const inCategory = matchesCategory(repo, state.categoryFilter);
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && inCategory;
   });
 
   state.filteredRepositories.sort((a, b) => {
@@ -313,7 +312,7 @@ function applyFiltersAndSort() {
           .replace('lovelace-', '')
           .localeCompare((b.hacs_name || b.name).replace('lovelace-', ''));
       case 'updated':
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        return new Date(releaseDate(b)).getTime() - new Date(releaseDate(a)).getTime();
       default:
         return 0;
     }

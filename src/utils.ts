@@ -1,3 +1,4 @@
+import type { Repository } from '@/types';
 import { html } from 'lit-html';
 
 /**
@@ -30,6 +31,48 @@ export function getRepoCategory(repoName: string): 'plugin' | 'integration' | 'o
     return 'other';
   }
   return 'integration';
+}
+
+/**
+ * The date a repo was last released, which is what users get; commits without a
+ * release (CI, docs, dependency bumps) do not count. Falls back to the last push.
+ *
+ * @param {Pick<Repository, 'released_at' | 'updated_at'>} repo The repository.
+ * @returns {string} ISO timestamp.
+ */
+export function releaseDate(repo: Pick<Repository, 'released_at' | 'updated_at'>): string {
+  return repo.released_at ?? repo.updated_at;
+}
+
+/**
+ * Tells whether an integration ships a Lovelace card of its own. Such repos carry the
+ * `lovelace-card` topic; HACS still installs them as an integration.
+ *
+ * @param {Pick<Repository, 'name' | 'topics'>} repo The repository.
+ * @returns {boolean} True for an integration with a bundled card.
+ */
+export function hasBundledCard(repo: Pick<Repository, 'name' | 'topics'>): boolean {
+  return (
+    getRepoCategory(repo.name) === 'integration' && (repo.topics || []).includes('lovelace-card')
+  );
+}
+
+/**
+ * Tells whether a repository belongs under a category tab. "Lovelace" lists every repo
+ * that brings a card, including integrations with a bundled one.
+ *
+ * @param {Pick<Repository, 'name' | 'topics'>} repo The repository.
+ * @param {'all' | 'plugin' | 'integration'} filter The selected tab.
+ * @returns {boolean} True when the repo should be shown.
+ */
+export function matchesCategory(
+  repo: Pick<Repository, 'name' | 'topics'>,
+  filter: 'all' | 'plugin' | 'integration',
+): boolean {
+  if (filter === 'all') return true;
+  const category = getRepoCategory(repo.name);
+  if (filter === 'plugin') return category === 'plugin' || hasBundledCard(repo);
+  return category === filter;
 }
 
 /**
