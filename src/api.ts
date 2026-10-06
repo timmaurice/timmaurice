@@ -183,7 +183,9 @@ export async function fetchRepositories(
   // Flexible filtering: include common variations of the topic
   const haTopics = ['home-assistant', 'homeassistant', 'hacs'];
   const filteredData = data.filter((repo: Repository) => {
-    const isExcluded = EXCLUDED_REPOS.includes(repo.name);
+    // An archived repo is retired (e.g. a card now bundled into its integration), so it
+    // leaves the store on its own without an EXCLUDED_REPOS entry.
+    const isExcluded = repo.archived || EXCLUDED_REPOS.includes(repo.name);
     const topics = repo.topics || [];
     const hasHATopic = topics.some((t: string) => haTopics.includes(t.toLowerCase()));
 

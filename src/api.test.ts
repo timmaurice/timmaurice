@@ -85,13 +85,21 @@ describe('fetchRepositories', () => {
     await expect(fetchRepositories()).rejects.toThrow('GitHub API Error');
   });
 
-  it('keeps only repos with a Home Assistant topic and drops explicitly excluded repos', async () => {
+  it('keeps only repos with a Home Assistant topic and drops excluded and archived repos', async () => {
     const repos = [
       { id: 1, name: 'lovelace-radar-card', topics: ['home-assistant'], default_branch: 'main' },
       { id: 2, name: 'unrelated-repo', topics: ['javascript'], default_branch: 'main' },
       // Excluded despite matching topic (see EXCLUDED_REPOS in config.ts):
       { id: 3, name: 'Ultra-Vehicle-Card', topics: ['hacs'], default_branch: 'main' },
       { id: 4, name: 'no-topics-repo', default_branch: 'main' },
+      // Archived repos drop out on their own, without an EXCLUDED_REPOS entry:
+      {
+        id: 5,
+        name: 'lovelace-sea-temperatures-card',
+        topics: ['home-assistant'],
+        archived: true,
+        default_branch: 'main',
+      },
     ];
 
     // Any secondary lookup during enrichment (hacs.json/icons/screenshots/releases) is
