@@ -113,7 +113,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
       <div class="card-image-wrapper">
         <img
           src="${screenshotUrl}"
-          alt="${repo.name} preview"
+          alt="Screenshot of ${repo.hacs_name || repo.name}"
           class="card-screenshot"
           loading="${isPriority ? 'eager' : 'lazy'}"
           fetchpriority="${isPriority ? 'high' : 'auto'}"
@@ -125,7 +125,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
         <header class="card-header">
           <img
             src="${iconUrl}"
-            alt="icon"
+            alt="${repo.hacs_name || repo.name} icon"
             class="card-icon-img"
             loading="lazy"
             decoding="async"
@@ -152,7 +152,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
             </a>
             <div class="badge-group">
               <span class="${badgeClass}">${badgeText}</span>
-              ${hasBundledCard(repo) ? html`<span class="badge lovelace">+ Card</span>` : ''}
+              ${hasBundledCard(repo) ? html`<span class="badge lovelace">Lovelace</span>` : ''}
               ${isRecentlyUpdated ? html`<span class="badge updated">Updated</span>` : ''}
             </div>
           </div>
