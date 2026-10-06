@@ -213,32 +213,28 @@ export function latestReleaseDate(
 export async function fetchRepositories(
   onProgress?: (current: number, total: number, name: string) => void,
 ): Promise<Repository[]> {
-  // Check cache first
   // Drop caches written by older versions of the page; they lack newer fields.
   for (const key of LEGACY_CACHE_KEYS) localStorage.removeItem(key);
 
+  // Check cache first
   const cached = localStorage.getItem(CACHE_KEY);
   if (cached) {
     try {
       const { timestamp, repos }: CacheData = JSON.parse(cached);
       if (Date.now() - timestamp < CACHE_DURATION) {
-        console.log('[API] Serving from valid cache. Repos:', repos.length);
         return repos;
       }
-      console.log('[API] Cache expired.');
     } catch (e) {
       console.warn('[API] Cache corruption detected. Clearing...', e);
       localStorage.removeItem(CACHE_KEY);
     }
   }
 
-  console.log('[API] Fetching repositories for user:', GITHUB_USERNAME);
   const response = await fetch(
     `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100`,
   );
 
   const currentRateLimit = logRateLimit(response);
-  console.log('[API] Rate Limit:', currentRateLimit?.remaining, '/', currentRateLimit?.limit);
 
   if (!response.ok) {
     if (cached) {
@@ -261,8 +257,6 @@ export async function fetchRepositories(
     throw new Error('Unexpected GitHub API response format.');
   }
 
-  console.log(`[API] Total repositories found: ${data.length}`);
-
   // Flexible filtering: include common variations of the topic
   const haTopics = ['home-assistant', 'homeassistant', 'hacs'];
   const filteredData = data.filter((repo: Repository) => {
@@ -274,8 +268,6 @@ export async function fetchRepositories(
 
     return !isExcluded && hasHATopic;
   });
-
-  console.log(`[API] Repositories after HA topic filter: ${filteredData.length}`);
 
   // One index instead of a HEAD request per repo against home-assistant/brands.
   const brandDomains = await fetchBrandDomains();

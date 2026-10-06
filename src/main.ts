@@ -284,13 +284,6 @@ const handleFilter = (category: 'all' | 'plugin' | 'integration') => {
  * search term and sort criteria stored in state.
  */
 function applyFiltersAndSort() {
-  console.log(
-    '[App] Applying filters. Search:',
-    state.searchTerm,
-    'Category:',
-    state.categoryFilter,
-  );
-
   state.filteredRepositories = state.repositories.filter((repo) => {
     const name = (repo.hacs_name || repo.name).toLowerCase();
     const desc = (repo.description || '').toLowerCase();
@@ -317,10 +310,6 @@ function applyFiltersAndSort() {
         return 0;
     }
   });
-
-  console.log(
-    `[App] Filtering complete. Showing ${state.filteredRepositories.length} of ${state.repositories.length} repos.`,
-  );
 }
 
 /**
@@ -329,18 +318,14 @@ function applyFiltersAndSort() {
  */
 async function init() {
   injectAnalytics();
-  console.log('[App] App starting...');
   updateUI();
 
   try {
-    console.log('[App] Triggering repository fetch...');
     state.repositories = await fetchRepositories((current, total, name) => {
       state.progressWidth = `${(current / total) * 100}%`;
       state.progressText = `Fetching ${name} (${current}/${total})...`;
       updateUI();
     });
-
-    console.log(`[App] Fetch success. Found ${state.repositories.length} repositories.`);
 
     state.totalStars = state.repositories.reduce((sum, repo) => sum + repo.stargazers_count, 0);
     state.totalDownloads = state.repositories.reduce(
