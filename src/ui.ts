@@ -1,6 +1,14 @@
 import { html, svg, render } from 'lit-html';
 import type { Repository } from '@/types';
-import { formatDate, getRepoCategory, optimizeImageUrl, highlightText, trackEvent } from '@/utils';
+import {
+  formatDate,
+  getRepoCategory,
+  hasBundledCard,
+  releaseDate,
+  optimizeImageUrl,
+  highlightText,
+  trackEvent,
+} from '@/utils';
 import { generateDynamicIcon, generateDynamicHero, getIconPath } from '@/graphics';
 import { GITHUB_USERNAME, RECENTLY_UPDATED_THRESHOLD_DAYS, MS_PER_DAY } from '@/config';
 
@@ -84,7 +92,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
 
   const isPriority = index < 2;
 
-  const updatedAt = new Date(repo.updated_at).getTime();
+  const updatedAt = new Date(releaseDate(repo)).getTime();
   const now = new Date().getTime();
   const diffDays = (now - updatedAt) / MS_PER_DAY;
   const isRecentlyUpdated = diffDays <= RECENTLY_UPDATED_THRESHOLD_DAYS;
@@ -99,7 +107,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
       data-description="${(repo.description || '').toLowerCase()}"
       data-stars="${repo.stargazers_count}"
       data-downloads="${repo.download_count || 0}"
-      data-updated="${new Date(repo.updated_at).getTime()}"
+      data-updated="${updatedAt}"
       data-alphabetical="${(repo.hacs_name || repo.name).replace('lovelace-', '').toLowerCase()}"
     >
       <div class="card-image-wrapper">
@@ -144,6 +152,7 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
             </a>
             <div class="badge-group">
               <span class="${badgeClass}">${badgeText}</span>
+              ${hasBundledCard(repo) ? html`<span class="badge lovelace">+ Card</span>` : ''}
               ${isRecentlyUpdated ? html`<span class="badge updated">Updated</span>` : ''}
             </div>
           </div>
@@ -159,7 +168,12 @@ export const repoCardTemplate = (repo: Repository, index: number, searchTerm: st
           <div class="stat">
             ${iconTemplate('download', 'download')} ${(repo.download_count || 0).toLocaleString()}
           </div>
-          <time class="stat" datetime="${repo.updated_at}">${formatDate(repo.updated_at)}</time>
+          <time
+            class="stat"
+            datetime="${releaseDate(repo)}"
+            title="${repo.released_at ? 'Latest release' : 'Last update'}"
+            >${formatDate(releaseDate(repo))}</time
+          >
         </footer>
         <div class="card-actions">
           ${

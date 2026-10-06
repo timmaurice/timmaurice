@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchRepositories, imageCandidates, logRateLimit } from '@/api';
+import { fetchRepositories, imageCandidates, latestReleaseDate, logRateLimit } from '@/api';
 import { CACHE_KEY } from '@/config';
 
 function makeStore() {
@@ -184,5 +184,33 @@ describe('fetchRepositories image lookup', () => {
     expect(
       fetchMock.mock.calls.some(([url]) => String(url).includes('bergfex/main/hacs.json')),
     ).toBe(false);
+  });
+});
+
+describe('latestReleaseDate', () => {
+  const rel = (published_at: string | null, prerelease = false, draft = false) => ({
+    published_at,
+    prerelease,
+    draft,
+  });
+
+  it('takes the newest stable release, skipping newer pre-releases and drafts', () => {
+    expect(
+      latestReleaseDate([
+        rel(null, false, true),
+        rel('2026-10-05T10:00:00Z', true),
+        rel('2026-10-03T10:00:00Z'),
+        rel('2026-09-01T10:00:00Z'),
+      ]),
+    ).toBe('2026-10-03T10:00:00Z');
+  });
+
+  it('falls back to the newest pre-release when there is no stable release', () => {
+    expect(latestReleaseDate([rel('2026-10-05T10:00:00Z', true)])).toBe('2026-10-05T10:00:00Z');
+  });
+
+  it('is undefined without any published release', () => {
+    expect(latestReleaseDate([])).toBeUndefined();
+    expect(latestReleaseDate([rel(null, false, true)])).toBeUndefined();
   });
 });

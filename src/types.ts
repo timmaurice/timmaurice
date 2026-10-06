@@ -5,6 +5,8 @@ export interface Repository {
   html_url: string;
   stargazers_count: number;
   updated_at: string;
+  /** Publish date of the latest release; falls back to updated_at when there is none. */
+  released_at?: string;
   topics: string[];
   archived?: boolean;
   default_branch: string;
