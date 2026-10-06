@@ -6,6 +6,7 @@ export interface Repository {
   stargazers_count: number;
   updated_at: string;
   topics: string[];
+  archived?: boolean;
   default_branch: string;
   hacs_name?: string;
   icon_url?: string;
