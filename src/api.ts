@@ -2,6 +2,7 @@ import type { Repository, CacheData } from '@/types';
 import {
   GITHUB_USERNAME,
   CACHE_KEY,
+  LEGACY_CACHE_KEYS,
   CACHE_DURATION,
   CONCURRENCY_LIMIT,
   EXCLUDED_REPOS,
@@ -213,6 +214,9 @@ export async function fetchRepositories(
   onProgress?: (current: number, total: number, name: string) => void,
 ): Promise<Repository[]> {
   // Check cache first
+  // Drop caches written by older versions of the page; they lack newer fields.
+  for (const key of LEGACY_CACHE_KEYS) localStorage.removeItem(key);
+
   const cached = localStorage.getItem(CACHE_KEY);
   if (cached) {
     try {

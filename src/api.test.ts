@@ -214,3 +214,23 @@ describe('latestReleaseDate', () => {
     expect(latestReleaseDate([rel(null, false, true)])).toBeUndefined();
   });
 });
+
+describe('cache versioning', () => {
+  it('ignores and removes a cache written by an older version of the page', async () => {
+    localStorage.setItem(
+      'gh_repos_cache',
+      JSON.stringify({ timestamp: Date.now(), repos: [{ id: 9, name: 'stale' }] }),
+    );
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/repos?per_page=100')) return Promise.resolve(jsonResponse([]));
+      return Promise.resolve(jsonResponse(null, { ok: false }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchRepositories();
+
+    expect(result).toEqual([]);
+    expect(fetchMock).toHaveBeenCalled();
+    expect(localStorage.getItem('gh_repos_cache')).toBeNull();
+  });
+});
