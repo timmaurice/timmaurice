@@ -297,7 +297,7 @@ export async function fetchRepositories(
       }
 
       // Fallbacks
-      if (repo.name === 'bergfex') repo.hacs_name = repo.hacs_name || 'Bergfex Scraper';
+      if (repo.name === 'bergfex') repo.hacs_name = repo.hacs_name || 'Bergfex';
       if (repo.name === 'feedparser') repo.hacs_name = repo.hacs_name || 'Feedparser';
 
       // 2. Fetch Icon (Brands then Local)
